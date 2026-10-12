@@ -37,6 +37,8 @@ class ChapterEntry(BaseModel):
     n: int
     title: str
     status: ChapterStatus = ChapterStatus.UNTOUCHED
+    # Set by GET /books/{slug} from the filesystem; absent in stored meta.json.
+    has_draft: Optional[bool] = None
 
 
 class BookMeta(BaseModel):
