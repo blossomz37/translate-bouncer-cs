@@ -46,3 +46,4 @@ client/vite.config.d.ts
 release/
 
 .archive/
+workspace-agents/
