@@ -8,9 +8,10 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Literal, Tuple
 
-from server.chapter_split import SplitChapter, split_docx
+from server.chapter_split import SplitChapter, split_docx, split_parsed
 from server.config import IngestionConfig
 from server.docx_io import parse_docx, write_docx
+from server.text_io import parse_md, parse_txt
 from server.paths import book_dir as _book_dir
 from server.paths import translate_root as _translate_root
 from server.slug import derive_slug
@@ -19,6 +20,15 @@ from server.slug import derive_slug
 class SourceFormat(str, Enum):
     FOLDER = "folder"
     SINGLE_DOCX = "single-docx"
+    SINGLE_TXT = "single-txt"
+    SINGLE_MD = "single-md"
+
+
+_PARSERS = {
+    ".docx": parse_docx,
+    ".txt": parse_txt,
+    ".md": parse_md,
+}
 
 
 class ChapterCountMismatch(Exception):
@@ -44,26 +54,38 @@ def detect_format(path: Path | str) -> SourceFormat:
     if not p.exists():
         raise FileNotFoundError(p)
     if p.is_dir():
-        if not any(child.suffix.lower() == ".docx" for child in p.iterdir()):
-            raise ValueError(f"no .docx files in {p}")
+        if not any(child.suffix.lower() in _PARSERS for child in p.iterdir()):
+            raise ValueError(f"no .docx, .txt, or .md files in {p}")
         return SourceFormat.FOLDER
     if p.suffix.lower() == ".docx":
         return SourceFormat.SINGLE_DOCX
+    if p.suffix.lower() == ".txt":
+        return SourceFormat.SINGLE_TXT
+    if p.suffix.lower() == ".md":
+        return SourceFormat.SINGLE_MD
     raise ValueError(f"unsupported source: {p}")
 
 
 def read_chapters(source: Path | str, ingestion: IngestionConfig) -> List[SplitChapter]:
-    """Return ordered chapters from either a folder of .docx files or one whole-book .docx."""
+    """Return ordered chapters from a folder of book files or one whole-book file."""
     fmt = detect_format(source)
     p = Path(source)
     if fmt == SourceFormat.FOLDER:
-        files = sorted(child for child in p.iterdir() if child.suffix.lower() == ".docx")
-        return [SplitChapter(title=f.stem, doc=parse_docx(f)) for f in files]
-    # single-docx
-    return split_docx(
-        p,
+        files = sorted(child for child in p.iterdir() if child.suffix.lower() in _PARSERS)
+        return [SplitChapter(title=f.stem, doc=_PARSERS[f.suffix.lower()](f)) for f in files]
+    if fmt == SourceFormat.SINGLE_DOCX:
+        return split_docx(
+            p,
+            heading_style=ingestion.heading_style,
+            fallback_patterns=ingestion.fallback_patterns,
+        )
+    # single-txt / single-md
+    parsed = _PARSERS[p.suffix.lower()](p)
+    return split_parsed(
+        parsed,
         heading_style=ingestion.heading_style,
         fallback_patterns=ingestion.fallback_patterns,
+        source=f"{p!r}",
     )
 
 
