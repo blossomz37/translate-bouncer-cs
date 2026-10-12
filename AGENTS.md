@@ -75,6 +75,7 @@ chapter metadata, and `final.docx`. Full table in `README.md` §12.
 | `.archive/` | Declutter: zipped superseded/stale/inactive files (YAGNI). Opaque — never read casually or glob during normal work. |
 | `.scratch/` | Owner's junk drawer: observations, potential changes, ephemeral reference. Gitignored. Don't write here; the owner points to it when relevant. |
 | `README.md` | End-user manual + developer section (§15) |
+| `ROADMAP.md` | Ordered plan: upcoming features and fixes |
 | `LICENSE.txt` | Restricted MIT — FFA members only; no external PRs |
 | `requirements.lock` | Pinned Python constraints (see "Running it"). Refresh after dependency changes: rebuild venv, run the gates, re-freeze. |
 | `.github/workflows/ci.yml` | CI: server (pytest+ruff+mypy, Py 3.11) + client (vitest+build, Node 22) |
