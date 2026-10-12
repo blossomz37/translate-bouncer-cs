@@ -5,7 +5,7 @@ import type { ChapterMeta, ParsedDoc, ReviewerResult } from "../types/api";
 
 interface DocsBundle {
   english: ParsedDoc;
-  working: ParsedDoc;
+  working: ParsedDoc | null;
   previous: ParsedDoc | null;
   suggestions: ReviewerResult | null;
 }

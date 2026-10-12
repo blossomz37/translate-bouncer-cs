@@ -2,9 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   finalChapterUrl,
   finalizeChapter,
+  getChapterDraft,
   getChapterState,
   runEditorRound,
   runReviewerRound,
+  translateChapter,
 } from "./chapters";
 
 const okJson = (body: unknown) => new Response(JSON.stringify(body), { status: 200 });
@@ -86,5 +88,25 @@ describe("chapters api", () => {
 
   it("finalChapterUrl builds the download path", () => {
     expect(finalChapterUrl("le-livre", 2)).toBe("/books/le-livre/chapter/2/final");
+  });
+
+  it("translateChapter POST with model", async () => {
+    const mock = (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      okJson({ state: {}, draft: {}, simplified: {}, dossier: "" })
+    );
+    await translateChapter("x", 1, "m1");
+    const [url, init] = mock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/books/x/chapter/1/translate");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual({ model: "m1" });
+  });
+
+  it("getChapterDraft URL", async () => {
+    const mock = (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      okJson({ has_draft: false, simplified: null, dossier: null })
+    );
+    const out = await getChapterDraft("x", 1);
+    expect(mock.mock.calls[0][0]).toBe("/books/x/chapter/1/draft");
+    expect(out.has_draft).toBe(false);
   });
 });

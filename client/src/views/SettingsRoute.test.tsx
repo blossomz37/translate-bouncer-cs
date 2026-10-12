@@ -18,7 +18,7 @@ describe("SettingsRoute", () => {
         { id: "anthropic/claude-sonnet-4", name: "Claude Sonnet 4" },
         { id: "openai/gpt-5", name: "GPT-5" },
       ]), { status: 200 }));
-      if (u === "/prompts/editor" || u === "/prompts/reviewer") {
+      if (u.startsWith("/prompts/")) {
         return Promise.resolve(new Response(JSON.stringify({
           current: "v1", versions: [{ id: "v1", saved_at: "2026-05-02T00:00:00Z", text: "seed" }],
         }), { status: 200 }));

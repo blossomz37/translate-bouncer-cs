@@ -165,4 +165,24 @@ describe("StatusBar", () => {
     );
     expect(screen.queryByRole("link", { name: /download final\.docx/i })).not.toBeInTheDocument();
   });
+
+  it("disables Continue and shows estimates when provided", () => {
+    render(
+      <StatusBar
+        activity={empty}
+        busy={false}
+        elapsed={0}
+        canFinalize={false}
+        canContinue={false}
+        continueEstimate="$0.12"
+        spendEstimate="$0.43"
+        onContinue={() => {}}
+        onDone={() => {}}
+      />,
+    );
+    const btn = screen.getByRole("button", { name: /continue \(≈ \$0\.12\)/i });
+    expect(btn).toBeDisabled();
+    expect(btn).toHaveAttribute("title", "Translate the chapter first");
+    expect(screen.getByText(/≈ \$0\.43 est\./i)).toBeInTheDocument();
+  });
 });

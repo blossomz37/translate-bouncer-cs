@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { getChapterDialog } from "../api/chapters";
-import type { ChapterDialog, ReviewerResult } from "../types/api";
+import { getChapterDialog, getChapterDraft } from "../api/chapters";
+import type { ChapterDialog, ChapterDraft, ReviewerResult } from "../types/api";
+import ParagraphRender from "./ParagraphRender";
 
 interface Props {
   result: ReviewerResult | null;
@@ -9,13 +10,16 @@ interface Props {
   currentRound: number;
 }
 
-type Tab = "suggestions" | "dialog";
+type Tab = "suggestions" | "dialog" | "draft";
 
 export default function SuggestionsPane({ result, bookSlug, chapterN, currentRound }: Props) {
   const [tab, setTab] = useState<Tab>("suggestions");
   const [dialog, setDialog] = useState<ChapterDialog | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState<ChapterDraft | null>(null);
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
 
   useEffect(() => {
     if (tab !== "dialog") return;
@@ -37,13 +41,35 @@ export default function SuggestionsPane({ result, bookSlug, chapterN, currentRou
     };
   }, [tab, bookSlug, chapterN, currentRound]);
 
+  useEffect(() => {
+    if (tab !== "draft") return;
+    let cancelled = false;
+    setDraftLoading(true);
+    setDraftError(null);
+    getChapterDraft(bookSlug, chapterN)
+      .then((d) => {
+        if (!cancelled) setDraft(d);
+      })
+      .catch((e) => {
+        if (!cancelled) setDraftError(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (!cancelled) setDraftLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, bookSlug, chapterN]);
+
   return (
     <section className="flex flex-col overflow-hidden bg-gray-50">
       <div className="sticky top-0 flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-1">
         <h2 className="text-xs font-semibold uppercase text-gray-500">
           {tab === "suggestions"
             ? `Reviewer suggestions${result ? ` (round ${result.round})` : ""}`
-            : "Model dialog"}
+            : tab === "dialog"
+              ? "Model dialog"
+              : "Translation draft"}
         </h2>
         <div className="flex gap-1 text-xs">
           <button
@@ -69,6 +95,18 @@ export default function SuggestionsPane({ result, bookSlug, chapterN, currentRou
           >
             Dialog
           </button>
+          <button
+            type="button"
+            onClick={() => setTab("draft")}
+            className={`rounded px-2 py-0.5 ${
+              tab === "draft"
+                ? "bg-blue-600 text-white"
+                : "border border-gray-300 text-gray-700 hover:bg-gray-100"
+            }`}
+            title="Show the translation dossier and simplified text"
+          >
+            Draft
+          </button>
         </div>
       </div>
 
@@ -79,8 +117,59 @@ export default function SuggestionsPane({ result, bookSlug, chapterN, currentRou
         {tab === "dialog" && (
           <DialogView dialog={dialog} loading={loading} error={error} />
         )}
+        {tab === "draft" && (
+          <DraftView draft={draft} loading={draftLoading} error={draftError} />
+        )}
       </div>
     </section>
+  );
+}
+
+function DraftView({
+  draft,
+  loading,
+  error,
+}: {
+  draft: ChapterDraft | null;
+  loading: boolean;
+  error: string | null;
+}) {
+  if (loading) return <p className="text-sm text-gray-500">Loading…</p>;
+  if (error) return <p className="text-sm text-red-600">{error}</p>;
+  if (!draft || (!draft.dossier && !draft.simplified)) {
+    return (
+      <p className="text-sm text-gray-500">
+        {draft && draft.has_draft
+          ? "This chapter was translated outside Translate — no dossier or simplified text on file."
+          : "No draft yet — translate this chapter first."}
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      {draft.dossier && (
+        <details className="rounded border border-gray-200 bg-white" open>
+          <summary className="cursor-pointer px-2 py-1 text-xs font-medium text-blue-700">
+            Translation dossier
+          </summary>
+          <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words bg-gray-50 px-2 py-1 font-mono text-xs">
+            {draft.dossier}
+          </pre>
+        </details>
+      )}
+      {draft.simplified && (
+        <details className="rounded border border-gray-200 bg-white">
+          <summary className="cursor-pointer px-2 py-1 text-xs font-medium text-green-700">
+            Simplified English ({draft.simplified.paragraphs.length} paragraphs)
+          </summary>
+          <div className="px-2 py-1">
+            {draft.simplified.paragraphs.map((p, i) => (
+              <ParagraphRender key={i} paragraph={p} />
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
   );
 }
 

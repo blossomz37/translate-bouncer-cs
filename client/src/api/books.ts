@@ -2,7 +2,7 @@ import type { BookMeta, LanguagePair } from "../types/api";
 import { request } from "./client";
 
 export interface IngestRequest {
-  translated_path: string;
+  translated_path?: string;
   english_path: string;
   language_pair: LanguagePair;
   on_collision?: "resume" | "new-session";

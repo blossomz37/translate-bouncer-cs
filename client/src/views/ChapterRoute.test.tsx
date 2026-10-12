@@ -114,4 +114,64 @@ describe("ChapterRoute", () => {
     expect(screen.getByRole("link", { name: /download final\.docx/i }))
       .toHaveAttribute("href", "/books/x/chapter/1/final");
   });
+
+  it("shows translate entry and runs the pipeline when no draft exists", async () => {
+    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
+    const orig = fetchMock.getMockImplementation() as (url: unknown) => Promise<Response>;
+    fetchMock.mockImplementation((url: unknown, init?: RequestInit) => {
+      const u = String(url);
+      if (u === "/books/x/chapter/1/docs") {
+        return Promise.resolve(new Response(JSON.stringify({
+          english: { paragraphs: [{ style: "normal", text: "Hello." }] },
+          working: null,
+          previous: null,
+          suggestions: null,
+        }), { status: 200 }));
+      }
+      if (u === "/models") {
+        return Promise.resolve(new Response(JSON.stringify([
+          { id: "m1", pricing: { prompt: "0.000003", completion: "0.000015" } },
+          { id: "m2", pricing: { prompt: "0.000003", completion: "0.000015" } },
+        ]), { status: 200 }));
+      }
+      if (u === "/books/x/chapter/1/translate" && init?.method === "POST") {
+        return Promise.resolve(new Response(JSON.stringify({
+          state: {
+            n: 1, status: "untouched", current_round: 0,
+            models: { editor: "m1", reviewer: "" },
+            prompts_used: {
+              editor_version: null, reviewer_version: null,
+              simplifier_version: "v1", dossier_version: "v1", translator_version: "v1",
+            },
+            rounds: [],
+          },
+          draft: { paragraphs: [{ style: "normal", text: "Bonjour." }] },
+          simplified: { paragraphs: [{ style: "normal", text: "Hello." }] },
+          dossier: "## Dossier",
+        }), { status: 200 }));
+      }
+      return orig(url);
+    });
+    render(
+      <MemoryRouter initialEntries={["/book/x/chapter/1"]}>
+        <Routes>
+          <Route path="/book/:slug/chapter/:n" element={<ChapterRoute />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    const translateBtn = await screen.findByRole("button", { name: /translate from english/i });
+    // Priced models → an ≈ estimate is shown; Continue stays locked.
+    expect(translateBtn.textContent).toMatch(/≈/);
+    expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
+    await userEvent.click(translateBtn);
+    await waitFor(() =>
+      expect(screen.getAllByText(/draft translated/i).length).toBeGreaterThanOrEqual(1)
+    );
+    const post = fetchMock.mock.calls.find(
+      ([u, i]) => String(u) === "/books/x/chapter/1/translate"
+        && (i as RequestInit)?.method === "POST"
+    );
+    expect(post).toBeTruthy();
+    expect(JSON.parse((post![1] as RequestInit).body as string)).toEqual({ model: "m1" });
+  });
 });

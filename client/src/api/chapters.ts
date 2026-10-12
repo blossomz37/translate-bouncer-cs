@@ -1,4 +1,4 @@
-import type { ChapterDialog, ChapterMeta, ReviewerResult } from "../types/api";
+import type { ChapterDialog, ChapterDraft, ChapterMeta, ReviewerResult, TranslateResponse } from "../types/api";
 import { request } from "./client";
 
 export const getChapterState = (slug: string, n: number) =>
@@ -21,6 +21,15 @@ export const finalizeChapter = (slug: string, n: number) =>
 
 export const finalChapterUrl = (slug: string, n: number) =>
   `/books/${slug}/chapter/${n}/final`;
+
+export const translateChapter = (slug: string, n: number, model: string) =>
+  request<TranslateResponse>(`/books/${slug}/chapter/${n}/translate`, {
+    method: "POST",
+    body: { model },
+  });
+
+export const getChapterDraft = (slug: string, n: number) =>
+  request<ChapterDraft>(`/books/${slug}/chapter/${n}/draft`);
 
 export const getChapterDialog = (slug: string, n: number) =>
   request<ChapterDialog>(`/books/${slug}/chapter/${n}/dialog`);

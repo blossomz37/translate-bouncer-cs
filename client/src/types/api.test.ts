@@ -48,7 +48,13 @@ describe("api types", () => {
       status: "untouched",
       current_round: 0,
       models: { editor: "", reviewer: "" },
-      prompts_used: { editor_version: null, reviewer_version: null },
+      prompts_used: {
+        editor_version: null,
+        reviewer_version: null,
+        simplifier_version: null,
+        dossier_version: null,
+        translator_version: null,
+      },
       rounds: [],
     };
     expect(cm.current_round).toBe(0);

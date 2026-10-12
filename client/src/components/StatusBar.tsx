@@ -12,6 +12,9 @@ interface StatusBarProps {
   busy: boolean;
   elapsed: number;
   canFinalize: boolean;
+  canContinue?: boolean;
+  continueEstimate?: string | null;
+  spendEstimate?: string | null;
   onContinue: () => void;
   onDone: () => void;
   finalDownloadUrl?: string | null;
@@ -30,6 +33,9 @@ export default function StatusBar({
   busy,
   elapsed,
   canFinalize,
+  canContinue = true,
+  continueEstimate = null,
+  spendEstimate = null,
   onContinue,
   onDone,
   finalDownloadUrl = null,
@@ -94,14 +100,23 @@ export default function StatusBar({
             </button>
           </div>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {spendEstimate && (
+              <span
+                className="text-xs text-gray-400"
+                title="Rough running estimate for translate + continue actions (batch runs excluded)"
+              >
+                ≈ {spendEstimate} est.
+              </span>
+            )}
             <button
               type="button"
               onClick={onContinue}
-              disabled={busy}
+              disabled={busy || !canContinue}
+              title={!canContinue ? "Translate the chapter first" : undefined}
               className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
             >
-              Continue
+              {`Continue${continueEstimate ? ` (≈ ${continueEstimate})` : ""}`}
             </button>
             <button
               type="button"

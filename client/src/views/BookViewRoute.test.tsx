@@ -45,4 +45,33 @@ describe("BookViewRoute", () => {
     expect(screen.getByText("in progress")).toBeInTheDocument();
     expect(screen.getByText("untouched")).toBeInTheDocument();
   });
+
+  it("labels a machine-translated source when the path is null", async () => {
+    (global.fetch as unknown as ReturnType<typeof vi.fn>).mockReset();
+    (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          slug: "le-livre",
+          created_at: "2026-05-02T00:00:00Z",
+          sources: {
+            translated: { path: null, format: "generated" },
+            english: { path: "/p/en", format: "folder" },
+          },
+          language_pair: { from: "en", to: "fr" },
+          chapters: [{ n: 1, title: "Ch 1", status: "untouched" }],
+        }),
+        { status: 200 }
+      )
+    );
+    render(
+      <MemoryRouter initialEntries={["/book/le-livre"]}>
+        <Routes>
+          <Route path="/book/:slug" element={<BookViewRoute />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await waitFor(() =>
+      expect(screen.getByText(/machine-translated in translate/i)).toBeInTheDocument()
+    );
+  });
 });

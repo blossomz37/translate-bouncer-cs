@@ -50,7 +50,9 @@ export default function BookViewRoute() {
             </div>
             <div>
               <dt className="inline font-medium">Translated: </dt>
-              <dd className="inline font-mono">{meta.sources.translated.path}</dd>
+              <dd className="inline font-mono">
+                {meta.sources.translated.path ?? "Machine-translated in Translate"}
+              </dd>
             </div>
           </dl>
 
