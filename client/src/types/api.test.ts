@@ -37,7 +37,7 @@ describe("api types", () => {
         english: { path: "/b", format: "single-docx" },
       },
       language_pair: { from: "en", to: "fr" },
-      chapters: [{ n: 1, title: "Ch 1", status: "untouched" }],
+      chapters: [{ n: 1, title: "Ch 1", status: "untouched", has_draft: false }],
     };
     expect(bm.language_pair.from).toBe("en");
   });

@@ -6,8 +6,8 @@ import TopBar from "./TopBar";
 import type { Model } from "../types/api";
 
 const chapters = [
-  { n: 1, title: "One", status: "done" as const },
-  { n: 2, title: "Two", status: "in_progress" as const },
+  { n: 1, title: "One", status: "done" as const, has_draft: true },
+  { n: 2, title: "Two", status: "in_progress" as const, has_draft: true },
 ];
 
 const sampleModels: Model[] = [

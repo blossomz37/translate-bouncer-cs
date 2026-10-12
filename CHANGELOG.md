@@ -46,6 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   suite counts refreshed across `README.md` and `AGENTS.md`.
 - Home page shows a setup checklist (API key → default models → first
   book) until each step is done, with links into Settings and New Book.
+- Book page shows a progress header ("X to translate · Y in progress ·
+  Z done") with one suggested next-action button into the chapter that
+  needs attention.
 
 ### Changed
 - Moved the prior developer's agentic working files from `docs/superpowers/`
