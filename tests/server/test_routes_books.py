@@ -45,6 +45,24 @@ def test_post_book_returns_409_on_chapter_count_mismatch(
     assert body["detail"]["tr_count"] == 3
 
 
+def test_post_book_returns_400_when_no_chapter_boundaries(
+    translate_root: Path, fixtures_dir: Path, tmp_path: Path
+) -> None:
+    from docx import Document
+    d = Document()
+    d.add_paragraph("Just prose, no chapter markers anywhere.")
+    unsplittable = tmp_path / "whole.docx"
+    d.save(str(unsplittable))
+    client = TestClient(create_app())
+    r = client.post("/books", json={
+        "translated_path": str(fixtures_dir / "sample-fr-folder"),
+        "english_path":    str(unsplittable),
+        "language_pair":   {"from": "en", "to": "fr"},
+    })
+    assert r.status_code == 400
+    assert "Could not split" in r.json()["detail"]
+
+
 def test_get_book_state_returns_meta(translate_root: Path, fixtures_dir: Path) -> None:
     client = TestClient(create_app())
     r = client.post("/books", json={
