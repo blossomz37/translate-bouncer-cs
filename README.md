@@ -1,12 +1,13 @@
 # Translate
 
-A local web app for AI-assisted bilingual chapter proofreading. You point it at
-a translated book (e.g. a German `.docx`, `.txt`, or `.md` file) and the
-English original, and it walks
-each chapter through repeated **Editor → Reviewer → Editor (apply suggestions)**
-rounds using two AI models you choose, until the translation reads the way you
-want it to. When you're happy, click **Done** and Translate writes a final
-`.docx` for that chapter.
+A local web app for AI-assisted book translation and bilingual chapter
+proofreading. You point it at your English book — with or without a
+first-pass translation (`.docx`, `.txt`, or `.md`) — and Translate first
+produces a draft translation chapter-by-chapter if you don't have one, then
+walks each chapter through repeated **Editor → Reviewer → Editor (apply
+suggestions)** rounds using two AI models you choose, until the translation
+reads the way you want it to. When you're happy, click **Done** and Translate
+writes a final `.docx` for that chapter.
 
 Everything runs on your own computer. The only outside service it talks to is
 [OpenRouter](https://openrouter.ai), which routes prompts to whichever AI model
@@ -44,11 +45,17 @@ You have:
 
 - An English book (`.docx`, `.txt`, or `.md` — or a folder of
   one-file-per-chapter in any of those formats)
-- A first-pass translation of that book into another language (same shape)
+- Optionally, a first-pass translation of that book into another
+  language (same shape). If you don't have one, Translate makes the
+  first draft for you, chapter by chapter.
 
-Translate splits both books into chapters, lines them up paragraph-for-paragraph,
-and lets you walk through each chapter polishing the translation. For each
-chapter you click **Continue**, and Translate sends the bilingual paragraphs
+Translate splits the book into chapters (and your translation too, if you
+brought one), lines them up paragraph-for-paragraph, and lets you walk
+through each chapter polishing the translation. Chapters without a draft
+show a **Translate from English** button: one click runs Simplify →
+Translation Dossier → Translate using your editor model, and the draft
+appears as the working version. For each chapter you then click
+**Continue**, and Translate sends the bilingual paragraphs
 to an **Editor model** (e.g. Claude Sonnet) that produces a smoother
 translation, then to a **Reviewer model** (e.g. GPT-5) that reads the result
 and writes a list of suggestions, then back to the Editor model one more time
@@ -227,8 +234,9 @@ Markdown headings) for chapter titles, you can ignore this section.
 
 ### Editor / Reviewer prompts
 
-At the bottom: the editor and reviewer prompt editors, as collapsible
-sections. See [section 11](#11-editing-the-prompts) for how those work.
+At the bottom: five prompt editors (editor, reviewer, simplifier,
+dossier, translator), as collapsible sections. See
+[section 11](#11-editing-the-prompts) for how those work.
 
 ---
 
@@ -239,15 +247,17 @@ window opens.
 
 ### Field by field
 
-- **Translated path** — the path to your translated book (`.docx`, `.txt`,
-  or `.md`), OR a folder containing one file per chapter. Click the
-  **File** button to open a native macOS file picker, or **Folder**
-  to pick a folder of chapter files. (You can also paste a path; Translate
-  strips wrapping quotes.) For `.txt`, paragraphs are separated by blank
-  lines. For `.md`, `#` headings mark chapters; only the prose subset
-  (headings, bold, italic) is kept. Either way, the finished chapter is
-  still written as `final.docx`.
-- **English path** — same idea, for the English original.
+- **Translated path** (optional) — the path to your translated book
+  (`.docx`, `.txt`, or `.md`), OR a folder containing one file per
+  chapter. Click the **File** button to open a native macOS file picker,
+  or **Folder** to pick a folder of chapter files. (You can also paste a
+  path; Translate strips wrapping quotes.) For `.txt`, paragraphs are
+  separated by blank lines. For `.md`, `#` headings mark chapters; only
+  the prose subset (headings, bold, italic) is kept. Either way, the
+  finished chapter is still written as `final.docx`. Leave this empty if
+  you don't have a translation yet — you'll make the first draft inside
+  Translate, chapter by chapter (see section 9).
+- **English path** — same idea, for the English original. Required.
 - **Source language** — what the English file is in. Defaults to **English (en)**.
 - **Target language** — what the translated file is in (German, French,
   Spanish, Brazilian Portuguese, etc.). This is used to label paragraphs
@@ -339,9 +349,11 @@ this is the editor's first translation; after Round 2 it incorporates the
 Round-1 reviewer's suggestions; and so on. Tick **Show diff vs round N**
 in the pane header to swap the pane to a paragraph-by-paragraph
 comparison against the previous round: added paragraphs get a green
-background, removed ones a red background with strike-through.
+background, removed ones a red background with strike-through. If the
+chapter has no draft yet, this pane instead shows a **Translate from
+English** button with a ≈ cost estimate (see section 9).
 
-**Right — Suggestions / Dialog.** Has two tabs at the top-right:
+**Right — Suggestions / Dialog / Draft.** Has three tabs at the top-right:
 
 - **Suggestions** (default) — the most recent reviewer's list of
   suggestions, each shown as a quote from the working text plus the
@@ -355,6 +367,10 @@ background, removed ones a red background with strike-through.
 
   Use this when something looks wrong and you want to see exactly what the
   models said.
+- **Draft** — the machine-translation artifacts for this chapter: the
+  Translation Dossier and the simplified English text. Only present for
+  chapters translated inside Translate; other chapters show an
+  explainer instead.
 
 ### The Batch row
 
@@ -379,15 +395,42 @@ A scrolling log shows every action with timestamps:
 - Below the log: a single status line shows the most recent event plus
   elapsed seconds when a model is running, plus two buttons:
   - **Continue** — run one round of *Editor → Reviewer → Editor (apply)*.
-    Disabled while busy. See [section 9](#9-what-a-round-actually-does).
+    Disabled while busy, and until the chapter has a draft. Shows a ≈
+    cost estimate when your models have pricing. See
+    [section 9](#9-what-a-round-actually-does).
   - **Done** — finalize the chapter. Asks for confirmation, then writes
     `final.docx` and marks the chapter `done`. Disabled until at least
     one round has run. Once done, a **Download final.docx** link appears
     next to the buttons.
+- Next to the buttons, a small `≈ $X est.` figure tracks rough running
+  spend for Translate + Continue actions (estimates only — tokens ≈
+  characters ÷ 4, output assumed ≈ input; batch runs excluded).
 
 ---
 
 ## 9. What a "round" actually does
+
+### Translating from scratch (no draft yet)
+
+If you ingested English only, each chapter starts without a draft.
+Opening it shows a **Translate from English** button where the working
+pane would be. One click runs three passes with your editor model,
+narrated live in the activity log:
+
+1. **Simplify** — rewrites the English into plainer sentences (dialogue
+   and formatting kept) so it translates cleanly.
+2. **Dossier** — analyzes the chapter into a Translation Dossier:
+   cultural adaptations, characters, names, terms, dialogue rules,
+   tone. Saved per chapter; read it in the **Draft** tab.
+3. **Translate** — drafts the chapter in your target language following
+   the dossier. Saved as the chapter's working draft.
+
+After that the chapter behaves exactly like one you brought a
+translation for: Continue, batch, Done all work the same. Two guards:
+Translate refuses chapters that already have rounds, and chapters
+whose translation you supplied at ingest (re-ingest English-only to
+start those over). The button shows a ≈ cost estimate when your model
+has pricing.
 
 When you click **Continue**, Translate makes up to three calls in sequence:
 
@@ -459,6 +502,8 @@ The activity log (right below the batch row) updates live:
 - The whole batch ends with: `✓ Batch complete`.
 
 Errors on one chapter don't stop the batch. The next chapter still runs.
+Chapters without a draft fail fast in the log — translate them first,
+since batch doesn't translate yet.
 
 You can keep clicking around the workspace while a batch runs — switch
 chapters, toggle to the Dialog tab, etc. Just don't close the browser tab
@@ -477,9 +522,11 @@ the header button becomes **Stop after current chapter**.
 
 ## 11. Editing the prompts
 
-Translate ships with default Editor and Reviewer prompts that work for most
-fiction. To customize them, open **Settings** and scroll to the prompt
-editors at the bottom (one collapsible section per prompt).
+Translate ships with default prompts that work for most
+fiction: Editor and Reviewer for rounds, plus Simplifier, Dossier, and
+Translator for the translate-first pipeline. To customize them, open
+**Settings** and scroll to the prompt editors at the bottom (one
+collapsible section per prompt).
 
 Each prompt editor has:
 
@@ -516,6 +563,9 @@ Everything Translate stores is under `~/.translate/`:
 | `~/.translate/<book-slug>/chapters/chNN/round-K-editor.json` | Same, as parsed JSON. |
 | `~/.translate/<book-slug>/chapters/chNN/round-K-editor.raw.txt` | The literal text the editor returned. Useful for debugging parse failures. |
 | `~/.translate/<book-slug>/chapters/chNN/round-K-reviewer.json` | The reviewer's parsed suggestions for round K, plus raw response. |
+| `~/.translate/<book-slug>/chapters/chNN/draft-simplified.json` | Simplified English (translate-first pipeline). |
+| `~/.translate/<book-slug>/chapters/chNN/draft-dossier.md` | Translation dossier, as Markdown. |
+| `~/.translate/<book-slug>/chapters/chNN/draft-*.raw.txt` | Raw model replies for the translate stages. |
 | `~/.translate/<book-slug>/chapters/chNN/meta.json` | Chapter metadata (status, current round, models used per round, prompts used per round). |
 | `~/.translate/<book-slug>/chapters/chNN/final.docx` | Written when you click Done. The shippable result. |
 
@@ -636,7 +686,7 @@ server/                    Python FastAPI server
   text_io.py               .txt/.md ↔ ParsedDoc conversion
   payload.py               bilingual payload renderer + tolerant parser
   prompts.py               editor/reviewer prompts + version history
-  rounds.py                editor/reviewer pass orchestration
+  rounds.py                pass orchestration (rounds + translate pipeline)
   finalize.py              writes final.docx
   openrouter.py            HTTP client with retry and 600s timeout
   routes/                  FastAPI route modules
@@ -672,6 +722,8 @@ CHANGELOG.md               release notes (Keep a Changelog)
 - `POST /books/{slug}/chapter/{n}/round/reviewer` — run a Reviewer pass
 - `POST /books/{slug}/chapter/{n}/finalize` — write `final.docx`, mark done
 - `GET  /books/{slug}/chapter/{n}/final` — download `final.docx` (404 until done)
+- `POST /books/{slug}/chapter/{n}/translate` — run Simplify → Dossier → Translate (409 if rounds exist or a translation was supplied)
+- `GET  /books/{slug}/chapter/{n}/draft` — dossier, simplified text, draft status
 - `GET  /books/{slug}/chapter/{n}/docs` — parsed paragraph data for the panes
 - `GET  /books/{slug}/chapter/{n}/dialog` — per-round raw model exchanges
 - `GET  /events` — Server-Sent Events stream (round progress, retries, errors)
