@@ -16,8 +16,11 @@ from server.paths import book_dir
 from server.prompts import PromptKind, load_prompts
 from server.rounds import (
     ReviewerResult,
+    run_dossier_pass,
     run_editor_pass,
     run_reviewer_pass,
+    run_simplification_pass,
+    run_translation_pass,
 )
 from server.state import (
     ChapterStatus,
@@ -47,6 +50,13 @@ def _load_source(slug: str, n: int) -> tuple[ParsedDoc, ParsedDoc]:
     en = ParsedDoc.model_validate_json((bd / "source-en" / f"ch{n:02d}.json").read_text())
     tr = ParsedDoc.model_validate_json((bd / "source-translated" / f"ch{n:02d}.json").read_text())
     return en, tr
+
+
+def _require_draft(slug: str, n: int) -> None:
+    if not (book_dir(slug) / "source-translated" / f"ch{n:02d}.json").exists():
+        raise HTTPException(
+            status_code=400, detail=f"chapter {n} has no draft yet — translate it first"
+        )
 
 
 def _current_target_doc(slug: str, n: int, current_round: int) -> ParsedDoc:
@@ -87,6 +97,7 @@ async def post_round_editor(slug: str, n: int, req: RoundRequest) -> dict:
 
     bm = load_book_meta(slug)
     cm = load_chapter_meta(slug, n=n)
+    _require_draft(slug, n)
     next_round = cm.current_round + 1
     en_doc, _ = _load_source(slug, n)
     target_doc = _current_target_doc(slug, n, cm.current_round)
@@ -174,6 +185,7 @@ async def post_round_reviewer(slug: str, n: int, req: RoundRequest) -> dict:
     cm = load_chapter_meta(slug, n=n)
     if cm.current_round < 1:
         raise HTTPException(status_code=400, detail="no Editor pass yet for this chapter")
+    _require_draft(slug, n)
     en_doc, _ = _load_source(slug, n)
     target_doc = _current_target_doc(slug, n, cm.current_round)
     reviewer_prompt = load_prompts(PromptKind.REVIEWER)
@@ -247,6 +259,152 @@ def post_finalize(slug: str, n: int) -> dict:
     return load_chapter_meta(slug, n=n).model_dump()
 
 
+def _stage_event(stage: str, phase: str, model: str, text: str, chapter: int) -> dict:
+    return {
+        "type": "status",
+        "chapter": chapter,
+        "stage": stage,
+        "phase": phase,
+        "model": model,
+        "text": text,
+    }
+
+
+@router.post("/books/{slug}/chapter/{n}/translate")
+async def post_translate(slug: str, n: int, req: RoundRequest) -> dict:
+    """Run Simplify → Dossier → Translate to manufacture the chapter draft."""
+    cfg = load_config()
+    try:
+        client = _make_client(cfg)
+    except ConfigurationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    try:
+        bm = load_book_meta(slug)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"book not found: {slug}")
+    cm = load_chapter_meta(slug, n=n)
+    if cm.current_round > 0:
+        raise HTTPException(
+            status_code=409, detail="chapter already has rounds; re-ingest to start over"
+        )
+    cdir = book_dir(slug) / "chapters" / f"ch{n:02d}"
+    if (book_dir(slug) / "source-translated" / f"ch{n:02d}.json").exists() and not (
+        cdir / "draft-translation.raw.txt"
+    ).exists():
+        raise HTTPException(
+            status_code=409, detail="chapter already has a supplied translation"
+        )
+    en_path = book_dir(slug) / "source-en" / f"ch{n:02d}.json"
+    if not en_path.exists():
+        raise HTTPException(status_code=404, detail=f"chapter {n} not in book {slug}")
+    en_doc = ParsedDoc.model_validate_json(en_path.read_text())
+
+    simplifier_prompt = load_prompts(PromptKind.SIMPLIFIER)
+    dossier_prompt = load_prompts(PromptKind.DOSSIER)
+    translator_prompt = load_prompts(PromptKind.TRANSLATOR)
+    simplifier_template = next(
+        v.text for v in simplifier_prompt.versions if v.id == simplifier_prompt.current
+    )
+    dossier_template = next(
+        v.text for v in dossier_prompt.versions if v.id == dossier_prompt.current
+    )
+    translator_template = next(
+        v.text for v in translator_prompt.versions if v.id == translator_prompt.current
+    )
+
+    def _retry(stage: str):
+        return lambda attempt, total: EVENT_BUS.publish(
+            _stage_event(
+                stage, "retry", req.model,
+                f"Ch {n} {stage.capitalize()} — retry {attempt}/{total}...", n,
+            )
+        )
+
+    try:
+        EVENT_BUS.publish(_stage_event(
+            "simplify", "sent", req.model, f"Ch {n} → Simplify ({req.model})", n,
+        ))
+        simplified = await run_simplification_pass(
+            client=client, slug=slug, chapter_n=n, en_doc=en_doc,
+            source_code=bm.language_pair.from_,
+            simplifier_prompt_template=simplifier_template,
+            model=req.model, on_retry=_retry("simplify"),
+        )
+        EVENT_BUS.publish(_stage_event(
+            "simplify", "returned", req.model, f"Ch {n} ← Simplify returned", n,
+        ))
+        EVENT_BUS.publish(_stage_event(
+            "dossier", "sent", req.model, f"Ch {n} → Dossier ({req.model})", n,
+        ))
+        dossier = await run_dossier_pass(
+            client=client, slug=slug, chapter_n=n, simplified_doc=simplified,
+            source_code=bm.language_pair.from_, target_code=bm.language_pair.to,
+            dossier_prompt_template=dossier_template,
+            model=req.model, on_retry=_retry("dossier"),
+        )
+        EVENT_BUS.publish(_stage_event(
+            "dossier", "returned", req.model, f"Ch {n} ← Dossier returned", n,
+        ))
+        EVENT_BUS.publish(_stage_event(
+            "translate", "sent", req.model, f"Ch {n} → Translate ({req.model})", n,
+        ))
+        translated = await run_translation_pass(
+            client=client, slug=slug, chapter_n=n, simplified_doc=simplified,
+            dossier=dossier,
+            source_code=bm.language_pair.from_, target_code=bm.language_pair.to,
+            translator_prompt_template=translator_template,
+            model=req.model, on_retry=_retry("translate"),
+        )
+        EVENT_BUS.publish(_stage_event(
+            "translate", "returned", req.model, f"Ch {n} ← Translate returned", n,
+        ))
+    except RecoverableError as exc:
+        EVENT_BUS.publish({"type": "error", "chapter": n, "text": str(exc)})
+        raise HTTPException(status_code=422, detail={"message": str(exc), "kind": "recoverable"})
+    except TransientError as exc:
+        EVENT_BUS.publish({"type": "error", "chapter": n, "text": str(exc)})
+        raise HTTPException(status_code=502, detail={"message": str(exc), "kind": "transient"})
+    except ConfigurationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    cm.models.editor = req.model
+    cm.prompts_used.simplifier_version = simplifier_prompt.current
+    cm.prompts_used.dossier_version = dossier_prompt.current
+    cm.prompts_used.translator_version = translator_prompt.current
+    save_chapter_meta(slug, cm)
+    EVENT_BUS.publish(_stage_event(
+        "translate", "complete", req.model, f"✓ Ch {n} draft translated", n,
+    ))
+    return {
+        "state": cm.model_dump(),
+        "draft": translated.model_dump(),
+        "simplified": simplified.model_dump(),
+        "dossier": dossier,
+    }
+
+
+@router.get("/books/{slug}/chapter/{n}/draft")
+def get_chapter_draft(slug: str, n: int) -> dict:
+    """Return the machine-translation artifacts (dossier, simplified, draft status)."""
+    try:
+        load_book_meta(slug)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"book not found: {slug}")
+    cdir = book_dir(slug) / "chapters" / f"ch{n:02d}"
+    simp_path = cdir / "draft-simplified.json"
+    dossier_path = cdir / "draft-dossier.md"
+    return {
+        "has_draft": (book_dir(slug) / "source-translated" / f"ch{n:02d}.json").exists(),
+        "simplified": (
+            ParsedDoc.model_validate_json(simp_path.read_text()).model_dump()
+            if simp_path.exists()
+            else None
+        ),
+        "dossier": dossier_path.read_text() if dossier_path.exists() else None,
+    }
+
+
 @router.get("/books/{slug}/chapter/{n}/final")
 def get_chapter_final(slug: str, n: int) -> FileResponse:
     """Download the finalized chapter .docx (404 until Done is clicked)."""
@@ -308,11 +466,14 @@ def get_chapter_docs(slug: str, n: int) -> dict:
     bd = book_dir(slug)
     en_path = bd / "source-en" / f"ch{n:02d}.json"
     tr_path = bd / "source-translated" / f"ch{n:02d}.json"
-    if not en_path.exists() or not tr_path.exists():
+    if not en_path.exists():
         raise HTTPException(status_code=404, detail=f"chapter {n} not in book {slug}")
 
     english = ParsedDoc.model_validate_json(en_path.read_text()).model_dump()
     if cm.current_round < 1:
+        if not tr_path.exists():
+            # English-only book: no draft manufactured yet.
+            return {"english": english, "working": None, "previous": None, "suggestions": None}
         working = ParsedDoc.model_validate_json(tr_path.read_text()).model_dump()
         previous = None
     else:

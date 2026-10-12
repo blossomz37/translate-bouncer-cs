@@ -63,6 +63,28 @@ def test_post_book_returns_400_when_no_chapter_boundaries(
     assert "Could not split" in r.json()["detail"]
 
 
+def test_post_book_without_translation_path(translate_root: Path, fixtures_dir: Path) -> None:
+    client = TestClient(create_app())
+    r = client.post("/books", json={
+        "english_path":    str(fixtures_dir / "sample-en-folder"),
+        "language_pair":   {"from": "en", "to": "fr"},
+    })
+    assert r.status_code == 200
+    state = client.get(f"/books/{r.json()['slug']}").json()
+    assert state["sources"]["translated"] == {"path": None, "format": "generated"}
+    assert len(state["chapters"]) == 3
+
+
+def test_post_book_with_empty_translation_path(translate_root: Path, fixtures_dir: Path) -> None:
+    client = TestClient(create_app())
+    r = client.post("/books", json={
+        "translated_path": "  ",
+        "english_path":    str(fixtures_dir / "sample-en-folder"),
+        "language_pair":   {"from": "en", "to": "fr"},
+    })
+    assert r.status_code == 200
+
+
 def test_get_book_state_returns_meta(translate_root: Path, fixtures_dir: Path) -> None:
     client = TestClient(create_app())
     r = client.post("/books", json={

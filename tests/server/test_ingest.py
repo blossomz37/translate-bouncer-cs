@@ -163,6 +163,26 @@ def test_ingest_book_with_md_folders_writes_docx_and_meta(tmp_path: Path, transl
     assert [c["title"] for c in meta["chapters"]] == ["ch01", "ch02"]
 
 
+def test_ingest_book_without_translation_writes_english_only(
+    fixtures_dir: Path, translate_root: Path
+) -> None:
+    import json
+
+    result = ingest_book(
+        translated_path=None,
+        english_path=fixtures_dir / "sample-en-folder",
+        language_pair=("en", "fr"),
+        ingestion=IngestionConfig(),
+    )
+    assert result.slug == "sample-en-folder"
+    book_dir = translate_root / result.slug
+    assert len(list((book_dir / "source-en").glob("ch*.json"))) == 3
+    assert not (book_dir / "source-translated").exists()
+    meta = json.loads((book_dir / "meta.json").read_text())
+    assert meta["sources"]["translated"] == {"path": None, "format": "generated"}
+    assert [c["title"] for c in meta["chapters"]] == ["ch01", "ch02", "ch03"]
+
+
 def test_ingest_book_uses_existing_slug_with_suffix_on_collision(
     fixtures_dir: Path, translate_root: Path
 ) -> None:

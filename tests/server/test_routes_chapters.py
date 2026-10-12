@@ -26,6 +26,19 @@ def app_with_book(translate_root: Path, fixtures_dir: Path, monkeypatch):
     return client, slug
 
 
+@pytest.fixture
+def app_with_english_only_book(translate_root: Path, fixtures_dir: Path, monkeypatch):
+    save_config(Config(openrouter_api_key="sk-or-test",
+                       default_models=DefaultModels(editor="ed", reviewer="rv")))
+    client = TestClient(create_app())
+    r = client.post("/books", json={
+        "english_path":    str(fixtures_dir / "sample-en-folder"),
+        "language_pair":   {"from": "en", "to": "fr"},
+    })
+    slug = r.json()["slug"]
+    return client, slug
+
+
 def test_get_chapter_state_initial(app_with_book) -> None:
     client, slug = app_with_book
     r = client.get(f"/books/{slug}/chapter/1/state")
@@ -88,6 +101,88 @@ def test_post_finalize_marks_done(app_with_book, monkeypatch) -> None:
     assert r.status_code == 200
     state = client.get(f"/books/{slug}/chapter/1/state").json()
     assert state["status"] == "done"
+
+
+_SIMPLIFY_MOCK_RESPONSE = (
+    "[1]\nEN: # Chapter 1\n\n"
+    "[2]\nEN: The morning everything began, it still rained.\n\n"
+    "[3]\nEN: Hello\n\n"
+    "[4]\nEN: The cold hand\n"
+)
+_DOSSIER_MOCK_RESPONSE = "## Dossier\n\nNothing tricky here."
+_TRANSLATE_MOCK_RESPONSE = (
+    "[1]\nFR: # Chapitre 1\n\n"
+    "[2]\nFR: Le matin où tout commença, il pleuvait encore.\n\n"
+    "[3]\nFR: Salut\n\n"
+    "[4]\nFR: La main *froide*\n"
+)
+
+
+def test_post_translate_manufactures_draft(app_with_english_only_book, monkeypatch) -> None:
+    client, slug = app_with_english_only_book
+    fake_client = AsyncMock()
+    fake_client.chat = AsyncMock(side_effect=[
+        _SIMPLIFY_MOCK_RESPONSE, _DOSSIER_MOCK_RESPONSE, _TRANSLATE_MOCK_RESPONSE,
+    ])
+    monkeypatch.setattr(chapters_routes, "_make_client", lambda cfg: fake_client)
+    r = client.post(f"/books/{slug}/chapter/1/translate", json={"model": "ed"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["dossier"].startswith("## Dossier")
+    assert body["draft"]["paragraphs"][1]["text"] == "Le matin où tout commença, il pleuvait encore."
+    assert body["state"]["prompts_used"]["translator_version"] == "v1"
+    # The manufactured draft is now served as the working doc.
+    docs = client.get(f"/books/{slug}/chapter/1/docs").json()
+    assert docs["working"]["paragraphs"][0]["text"] == "Chapitre 1"
+    draft = client.get(f"/books/{slug}/chapter/1/draft").json()
+    assert draft["has_draft"] is True
+    assert draft["simplified"]["paragraphs"][1]["text"] == (
+        "The morning everything began, it still rained."
+    )
+
+
+def test_post_translate_returns_409_for_supplied_translation(app_with_book) -> None:
+    client, slug = app_with_book
+    r = client.post(f"/books/{slug}/chapter/1/translate", json={"model": "ed"})
+    assert r.status_code == 409
+
+
+def test_post_translate_returns_409_after_rounds(app_with_english_only_book, monkeypatch) -> None:
+    client, slug = app_with_english_only_book
+    fake_client = AsyncMock()
+    fake_client.chat = AsyncMock(side_effect=[
+        _SIMPLIFY_MOCK_RESPONSE, _DOSSIER_MOCK_RESPONSE, _TRANSLATE_MOCK_RESPONSE,
+        _EDITOR_MOCK_RESPONSE,
+    ])
+    monkeypatch.setattr(chapters_routes, "_make_client", lambda cfg: fake_client)
+    assert client.post(f"/books/{slug}/chapter/1/translate", json={"model": "ed"}).status_code == 200
+    assert client.post(
+        f"/books/{slug}/chapter/1/round/editor", json={"model": "ed"}
+    ).status_code == 200
+    r = client.post(f"/books/{slug}/chapter/1/translate", json={"model": "ed"})
+    assert r.status_code == 409
+
+
+def test_get_docs_returns_null_working_without_draft(app_with_english_only_book) -> None:
+    client, slug = app_with_english_only_book
+    r = client.get(f"/books/{slug}/chapter/1/docs")
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body["english"]["paragraphs"]) > 0
+    assert body["working"] is None
+
+
+def test_get_draft_reports_no_draft(app_with_english_only_book) -> None:
+    client, slug = app_with_english_only_book
+    body = client.get(f"/books/{slug}/chapter/1/draft").json()
+    assert body == {"has_draft": False, "simplified": None, "dossier": None}
+
+
+def test_post_round_editor_returns_400_without_draft(app_with_english_only_book) -> None:
+    client, slug = app_with_english_only_book
+    r = client.post(f"/books/{slug}/chapter/1/round/editor", json={"model": "ed"})
+    assert r.status_code == 400
+    assert "no draft yet" in r.json()["detail"]
 
 
 def test_get_final_returns_404_before_finalize(app_with_book) -> None:
