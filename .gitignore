@@ -46,7 +46,10 @@ client/vite.config.d.ts
 release/
 
 .archive/
-workspace-agents/
+# Agentic working files stay out of the repo — except runs/, the session
+# handoff notes every future session/agent needs.
+workspace-agents/*
+!workspace-agents/runs/
 .scratch/
 .venv/
 .venv-freeze-check/
