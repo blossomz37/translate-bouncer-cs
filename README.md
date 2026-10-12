@@ -714,7 +714,7 @@ client/                    React + Vite + TypeScript SPA
   src/lib/                 batchRunner, modelDisplay, languages, diff
   src/api/                 small fetch wrappers per resource
   src/hooks/               useBook, useChapter, useEvents, useModels, useSettings
-tests/server/              pytest suite (143)
+tests/server/              pytest suite (144)
 docs/                      official docs (assets/, screenshots)
 docs/assets/               app screenshots
 requirements.lock          pinned Python constraints for the above install
@@ -760,8 +760,8 @@ proxied to the Python server.
 ### Tests
 
 ```bash
-.venv/bin/python -m pytest tests/server/ -v   # 143 passed
-cd client && npm test                          # 118 tests
+.venv/bin/python -m pytest tests/server/ -v   # 144 passed
+cd client && npm test                          # 131 tests
 ```
 
 ### Contributing
