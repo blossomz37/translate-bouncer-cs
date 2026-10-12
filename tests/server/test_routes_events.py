@@ -21,8 +21,9 @@ def reset_event_bus() -> None:
 def test_events_route_is_registered() -> None:
     """Smoke test: verify the /events route is registered on the app."""
     app = create_app()
-    routes = [route.path for route in app.routes]
-    assert "/events" in routes
+    # url_path_for instead of flat app.routes introspection: Starlette 1.x
+    # stores included routers as nested _IncludedRouter entries without .path.
+    assert app.url_path_for("events_stream") == "/events"
 
 
 async def test_events_stream_emits_sse_format() -> None:
