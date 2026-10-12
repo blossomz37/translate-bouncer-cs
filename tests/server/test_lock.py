@@ -43,6 +43,7 @@ def test_acquire_takes_over_stale_lock(translate_root: Path) -> None:
     )
     acquire_lock(url="http://localhost:5181")
     data = read_lock()
+    assert data is not None
     assert data["pid"] == os.getpid()
     assert data["url"] == "http://localhost:5181"
     release_lock()

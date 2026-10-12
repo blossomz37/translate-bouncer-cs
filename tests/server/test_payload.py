@@ -58,7 +58,7 @@ def test_parse_target_lines_round_trips_render():
         Paragraph(style="heading-1", text="Chapitre 1"),
         Paragraph(style="normal", text="Bonjour *là*."),
     ])
-    rendered = render_payload(en, fr, source_code="EN", target_code="FR")
+    render_payload(en, fr, source_code="EN", target_code="FR")  # must not raise
     # Simulate what an Editor would return: only target-language lines.
     editor_response = "\n".join([
         "[1]",

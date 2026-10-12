@@ -12,7 +12,7 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-from server.paths import prompts_dir, translate_root
+from server.paths import prompts_dir
 
 
 class PromptKind(str, Enum):

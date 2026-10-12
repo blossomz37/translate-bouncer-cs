@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import os
 import stat
 from pathlib import Path
 
-from server.config import Config, load_config, save_config
+from server.config import Config, DefaultModels, load_config, save_config
 
 
 def test_load_returns_default_when_missing(translate_root: Path) -> None:
@@ -19,7 +18,7 @@ def test_load_returns_default_when_missing(translate_root: Path) -> None:
 def test_save_writes_json_and_round_trips(translate_root: Path) -> None:
     cfg = Config(
         openrouter_api_key="sk-or-test",
-        default_models={"editor": "anthropic/claude-sonnet-4", "reviewer": "openai/gpt-5"},
+        default_models=DefaultModels(editor="anthropic/claude-sonnet-4", reviewer="openai/gpt-5"),
     )
     save_config(cfg)
     loaded = load_config()

@@ -1,7 +1,6 @@
 """Read and write ~/.translate/config.json with mode 600."""
 from __future__ import annotations
 
-import json
 import os
 from typing import List
 

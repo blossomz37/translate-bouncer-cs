@@ -48,6 +48,7 @@ def test_write_emits_heading_at_correct_level(tmp_path: Path) -> None:
     out = tmp_path / "out.docx"
     write_docx(parsed, out)
     doc = Document(str(out))
+    assert doc.paragraphs[0].style is not None
     assert doc.paragraphs[0].style.name == "Heading 1"
     assert doc.paragraphs[0].text == "Chapter 9"
 

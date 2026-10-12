@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from server.paths import translate_root
 
 
 def test_translate_root_uses_env_var_when_set(translate_root: Path) -> None:

@@ -10,7 +10,6 @@ from server.docx_io import ParsedDoc, Paragraph
 from server.errors import RecoverableError
 from server.ingest import ingest_book
 from server.rounds import (
-    LANGUAGE_NAMES,
     render_editor_prompt,
     render_reviewer_prompt,
     run_editor_pass,

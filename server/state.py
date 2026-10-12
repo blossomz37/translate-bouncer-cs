@@ -1,10 +1,8 @@
 """Typed read/write of book and chapter meta.json files."""
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
 from enum import Enum
-from pathlib import Path
 from typing import List, Optional
 
 from pydantic import BaseModel, Field

@@ -6,7 +6,6 @@ import pytest
 
 from server.ingest import (
     ChapterCountMismatch,
-    IngestResult,
     SourceFormat,
     detect_format,
     ingest_book,

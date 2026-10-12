@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
 
-from server.config import Config, save_config
+from server.config import Config, DefaultModels, save_config
 from server.errors import TransientError
 from server.main import create_app
 from server.routes import chapters as chapters_routes
@@ -16,7 +15,7 @@ from server.routes import chapters as chapters_routes
 @pytest.fixture
 def app_with_book(translate_root: Path, fixtures_dir: Path, monkeypatch):
     save_config(Config(openrouter_api_key="sk-or-test",
-                       default_models={"editor": "ed", "reviewer": "rv"}))
+                       default_models=DefaultModels(editor="ed", reviewer="rv")))
     client = TestClient(create_app())
     r = client.post("/books", json={
         "translated_path": str(fixtures_dir / "sample-fr-folder"),

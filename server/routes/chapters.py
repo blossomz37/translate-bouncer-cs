@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException
@@ -20,10 +19,7 @@ from server.rounds import (
     run_reviewer_pass,
 )
 from server.state import (
-    ChapterMeta,
     ChapterStatus,
-    Models,
-    PromptsUsed,
     RoundEntry,
     load_book_meta,
     load_chapter_meta,

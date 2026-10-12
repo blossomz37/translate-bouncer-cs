@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import asyncio
-import json
+from collections.abc import Generator
 
 import pytest
-from fastapi.testclient import TestClient
 
 from server.main import EVENT_BUS, create_app
 from server.routes.events import events_stream
 
 
 @pytest.fixture(autouse=True)
-def reset_event_bus() -> None:
+def reset_event_bus() -> Generator[None, None, None]:
     """Clear all subscribers before and after each test."""
     EVENT_BUS._subscribers.clear()
     yield

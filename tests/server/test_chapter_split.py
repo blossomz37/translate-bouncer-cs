@@ -6,7 +6,6 @@ import pytest
 
 from server.chapter_split import (
     ChapterSplitError,
-    SplitChapter,
     split_by_heading_style,
     split_by_pattern,
     split_docx,
