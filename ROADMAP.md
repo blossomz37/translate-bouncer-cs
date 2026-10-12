@@ -15,19 +15,9 @@ on its own branch with tests, gates green, and a changelog entry.
   draft (prompts seeded from the FFA class); dossier/simplified
   artifacts viewable in a Draft tab; estimate-only cost readout
   (≈ per action + session total).
-
-## Now — Slice 4: workflow clarity
-
-The pages work but don't teach the workflow. Three additions:
-
-1. **Setup checklist** on Home until key + default models + first
-   book exist (each item links to Settings or opens New Book).
-2. **Book progress header**: "X to translate · Y in progress · Z
-   done" with one suggested next-action button (Translate / Continue
-   the next chapter). Server enriches `GET /books/{slug}` chapters
-   with `has_draft` (file check, no migration).
-3. **Chapter stage indicator**: Translate → Rounds → Done strip under
-   the top bar showing where this chapter is and what's next.
+- **Slice 4 — workflow clarity** (2026-10-12): setup checklist on
+  Home, book progress header with next-action button, chapter stage
+  strip (Translate → Rounds → Done).
 
 ## Later — features
 

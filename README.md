@@ -284,8 +284,12 @@ This is what you see when Translate opens.
 
 - **+ New book** button — top-right. Opens the New book window above.
 - **Settings** link — top-right. Opens Settings.
+- **Get set up checklist** — until you've saved an API key, picked
+  default models, and ingested a book, a checklist shows what's missing
+  with links to each step. It disappears once you're set up.
 - **One row per book** — each row shows the book's slug; click anywhere on
-  the row to open that book. If no books exist, you see "No books yet."
+  the row to open that book. If no books exist, you see "No books yet.
+  Click "+ New book" to ingest one."
 
 That's the whole page.
 
@@ -300,6 +304,9 @@ Clicking a book row opens its overview.
   section 10). **Settings** link next to it.
 - **Book slug** — large title, with the language pair, chapter count,
   and the original English/translated source paths underneath.
+- **Progress header** — "X to translate · Y in progress · Z done",
+  with one button taking you to the chapter that needs attention
+  next (Translate or Continue it). When everything is done it says so.
 - **Chapter list** — every chapter as a row showing `Ch 01 — Title`
   plus its status, right-aligned.
   - Status `untouched` (grey) = no rounds run yet.
@@ -311,15 +318,16 @@ Clicking a book row opens its overview.
 
 ## 8. The Chapter workspace (the editor page)
 
-This is where most of the work happens. The page is laid out as four bands
+This is where most of the work happens. The page is laid out as five bands
 top-to-bottom:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ Top bar        [chapter ▾]  Editor ▾  Reviewer ▾  ⚙     │
+│ Stage: ① Translate ─ ② Rounds ─ ③ Done    Next: …       │
 ├──────────────┬──────────────────┬───────────────────────┤
-│  English     │  Working (target)│  Suggestions / Dialog │
-│              │                  │                       │
+│  English     │  Working (target)│  Suggestions/Dialog/  │
+│              │                  │  Draft                │
 ├──────────────┴──────────────────┴───────────────────────┤
 │ Batch row     [from][to][skip done][rounds][finalize] [Run batch] │
 ├─────────────────────────────────────────────────────────┤
@@ -339,6 +347,13 @@ top-to-bottom:
   - Picker rows show: name (in **red** if the model supports tools), context
     size, and pricing `$input/$output` per million tokens.
 - **⚙ Settings** — opens Settings.
+
+### The stage strip
+
+Translate → Rounds → Done, with the chapter's current stage
+highlighted and a "Next: …" hint on the right telling you the next
+step (translate the chapter, Continue, or — when done — grab
+`final.docx` below).
 
 ### The three panes
 
