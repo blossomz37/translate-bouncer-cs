@@ -108,10 +108,10 @@ In VS Code, the local-only `.vscode/tasks.json` (gitignored) provides
 ## Tests and checks
 
 ```bash
-.venv/bin/python -m pytest tests/server/ -q   # server suite (143)
+.venv/bin/python -m pytest tests/server/ -q   # server suite (144)
 .venv/bin/ruff check server tests             # lint gate (pyflakes F-only)
 .venv/bin/mypy server tests                   # type gate
-cd client && npm test                         # vitest suite (118)
+cd client && npm test                         # vitest suite (131)
 cd client && npm run build                    # tsc + vite build (type check)
 ```
 

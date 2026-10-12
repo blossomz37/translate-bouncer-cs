@@ -64,6 +64,21 @@ describe("ChapterRoute", () => {
     expect(screen.getByText(/click continue/i)).toBeInTheDocument();
   });
 
+  it("shows the stage strip with the next step", async () => {
+    render(
+      <MemoryRouter initialEntries={["/book/x/chapter/1"]}>
+        <Routes>
+          <Route path="/book/:slug/chapter/:n" element={<ChapterRoute />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await waitFor(() => expect(screen.getByText("Hello.")).toBeInTheDocument());
+    // Working draft present, round 0, untouched → rounds stage.
+    const roundsLabels = screen.getAllByText("Rounds");
+    expect(roundsLabels.some((el) => el.className.includes("font-semibold"))).toBe(true);
+    expect(screen.getByText(/next: continue/i)).toBeInTheDocument();
+  });
+
   it("shows an error with retry and back link when loading fails", async () => {
     const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
     const orig = fetchMock.getMockImplementation() as (url: unknown) => Promise<Response>;

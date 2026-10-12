@@ -5,6 +5,7 @@ import type { ChapterMeta } from "../types/api";
 import { ApiError } from "../api/client";
 import BatchControls from "../components/BatchControls";
 import EnglishPane from "../components/EnglishPane";
+import StageIndicator from "../components/StageIndicator";
 import StatusBar, { type ActivityEntry } from "../components/StatusBar";
 import SuggestionsPane from "../components/SuggestionsPane";
 import TopBar from "../components/TopBar";
@@ -211,8 +212,14 @@ export default function ChapterRoute() {
     return <div data-testid="chapter-route" className="p-6 text-gray-500">Loading…</div>;
   }
 
+  const stage = chapter.meta.status === "done"
+    ? "done"
+    : needsTranslation
+      ? "translate"
+      : "rounds";
+
   return (
-    <div data-testid="chapter-route" className="grid h-full grid-rows-[auto_1fr_auto_auto] bg-gray-100">
+    <div data-testid="chapter-route" className="grid h-full grid-rows-[auto_auto_1fr_auto_auto] bg-gray-100">
       <TopBar
         bookSlug={slug}
         chapters={book.chapters}
@@ -224,6 +231,7 @@ export default function ChapterRoute() {
         onReviewerModelChange={setReviewerModel}
         onChapterChange={(newN) => navigate(`/book/${slug}/chapter/${newN}`)}
       />
+      <StageIndicator stage={stage} />
       <main className="grid grid-cols-3 overflow-hidden">
         <EnglishPane doc={chapter.enDoc} />
         {needsTranslation ? (

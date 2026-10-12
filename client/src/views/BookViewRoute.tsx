@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import BookProgress from "../components/BookProgress";
 import ChapterListItem from "../components/ChapterListItem";
 import { useBook } from "../hooks/useBook";
 import BatchRunModal from "./BatchRunModal";
@@ -55,6 +56,8 @@ export default function BookViewRoute() {
               </dd>
             </div>
           </dl>
+
+          <BookProgress bookSlug={meta.slug} chapters={meta.chapters} />
 
           <ul className="mt-6 rounded border border-gray-200">
             {meta.chapters.map((c) => (

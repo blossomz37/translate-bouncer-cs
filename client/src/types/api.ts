@@ -21,6 +21,7 @@ export interface ChapterEntry {
   n: number;
   title: string;
   status: ChapterStatus;
+  has_draft: boolean;
 }
 
 export interface BookMeta {

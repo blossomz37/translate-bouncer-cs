@@ -6,7 +6,7 @@ React/Vite SPA; OpenRouter is the only outside service.
 
 ## Where things stand
 
-- `main` is green and pushed (2026-10-12): pytest 143, vitest 118,
+- `main` is green and pushed (2026-10-12): pytest 144, vitest 131,
   ruff, mypy, and client build all pass; CI runs the same gates.
 - Shipped: txt/md ingest, UI trust fixes, and the translate-first
   pipeline (English-only ingest → per-chapter Simplify → Dossier →

@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ingestBook } from "../api/books";
+import SetupChecklist from "../components/SetupChecklist";
 import { useBooks } from "../hooks/useBooks";
+import { useSettings } from "../hooks/useSettings";
 import NewBookModal from "./NewBookModal";
 
 export default function BookListRoute() {
   const { slugs, refresh, loading, error } = useBooks();
+  const { settings, loading: settingsLoading } = useSettings();
   const [showModal, setShowModal] = useState(false);
   const [ingestError, setIngestError] = useState<string | null>(null);
   const [ingesting, setIngesting] = useState(false);
@@ -34,6 +37,15 @@ export default function BookListRoute() {
 
       {loading && <p className="text-gray-500">Loading…</p>}
       {error && <p className="text-red-600">{error.message}</p>}
+
+      {!loading && !settingsLoading && settings && (
+        <SetupChecklist
+          hasApiKey={settings.openrouter_api_key !== ""}
+          hasDefaultModels={settings.default_models.editor !== "" && settings.default_models.reviewer !== ""}
+          hasBooks={slugs.length > 0}
+          onNewBook={() => setShowModal(true)}
+        />
+      )}
 
       {!loading && !error && slugs.length === 0 && (
         <p className="text-gray-500">No books yet. Click "+ New book" to ingest one.</p>

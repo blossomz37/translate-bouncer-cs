@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from server.chapter_split import ChapterSplitError
 from server.config import load_config
 from server.ingest import ChapterCountMismatch, ingest_book
+from server.paths import book_dir
 from server.state import LanguagePair, list_books, load_book_meta
 
 router = APIRouter()
@@ -70,6 +71,10 @@ def post_book(req: IngestRequest) -> IngestResponse:
 @router.get("/books/{slug}")
 def get_book(slug: str) -> dict:
     try:
-        return load_book_meta(slug).model_dump(by_alias=True)
+        meta = load_book_meta(slug)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"book not found: {slug}")
+    bd = book_dir(slug)
+    for entry in meta.chapters:
+        entry.has_draft = (bd / "source-translated" / f"ch{entry.n:02d}.json").exists()
+    return meta.model_dump(by_alias=True)

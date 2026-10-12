@@ -15,6 +15,9 @@ on its own branch with tests, gates green, and a changelog entry.
   draft (prompts seeded from the FFA class); dossier/simplified
   artifacts viewable in a Draft tab; estimate-only cost readout
   (≈ per action + session total).
+- **Slice 4 — workflow clarity** (2026-10-12): setup checklist on
+  Home, book progress header with next-action button, chapter stage
+  strip (Translate → Rounds → Done).
 
 ## Later — features
 

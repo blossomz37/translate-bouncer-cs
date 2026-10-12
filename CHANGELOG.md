@@ -44,6 +44,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeps a running session estimate (estimate-only v1).
 - `STATUS.md`: one-page project status snapshot with a doc map; test
   suite counts refreshed across `README.md` and `AGENTS.md`.
+- Home page shows a setup checklist (API key → default models → first
+  book) until each step is done, with links into Settings and New Book.
+- Book page shows a progress header ("X to translate · Y in progress ·
+  Z done") with one suggested next-action button into the chapter that
+  needs attention.
+- Chapter workspace shows a Translate → Rounds → Done stage strip
+  under the top bar with the chapter's current stage and next step.
 
 ### Changed
 - Moved the prior developer's agentic working files from `docs/superpowers/`

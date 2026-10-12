@@ -46,6 +46,21 @@ describe("BookViewRoute", () => {
     expect(screen.getByText("untouched")).toBeInTheDocument();
   });
 
+  it("shows progress counts with a next-action link", async () => {
+    render(
+      <MemoryRouter initialEntries={["/book/le-livre"]}>
+        <Routes>
+          <Route path="/book/:slug" element={<BookViewRoute />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await waitFor(() =>
+      expect(screen.getByText(/1 to translate · 1 in progress · 1 done/i)).toBeInTheDocument()
+    );
+    expect(screen.getByRole("link", { name: /translate chapter 3/i }))
+      .toHaveAttribute("href", "/book/le-livre/chapter/3");
+  });
+
   it("labels a machine-translated source when the path is null", async () => {
     (global.fetch as unknown as ReturnType<typeof vi.fn>).mockReset();
     (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(

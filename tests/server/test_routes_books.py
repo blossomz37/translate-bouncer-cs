@@ -85,6 +85,24 @@ def test_post_book_with_empty_translation_path(translate_root: Path, fixtures_di
     assert r.status_code == 200
 
 
+def test_get_book_enriches_has_draft(translate_root: Path, fixtures_dir: Path) -> None:
+    client = TestClient(create_app())
+    supplied = client.post("/books", json={
+        "translated_path": str(fixtures_dir / "sample-fr-folder"),
+        "english_path":    str(fixtures_dir / "sample-en-folder"),
+        "language_pair":   {"from": "en", "to": "fr"},
+    }).json()["slug"]
+    body = client.get(f"/books/{supplied}").json()
+    assert [c["has_draft"] for c in body["chapters"]] == [True, True, True]
+
+    english_only = client.post("/books", json={
+        "english_path":    str(fixtures_dir / "sample-en-folder"),
+        "language_pair":   {"from": "en", "to": "fr"},
+    }).json()["slug"]
+    body = client.get(f"/books/{english_only}").json()
+    assert [c["has_draft"] for c in body["chapters"]] == [False, False, False]
+
+
 def test_get_book_state_returns_meta(translate_root: Path, fixtures_dir: Path) -> None:
     client = TestClient(create_app())
     r = client.post("/books", json={
