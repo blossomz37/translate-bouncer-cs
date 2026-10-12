@@ -47,3 +47,4 @@ release/
 
 .archive/
 workspace-agents/
+.scratch/
