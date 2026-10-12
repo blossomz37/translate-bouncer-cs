@@ -49,6 +49,30 @@ def render_payload(
     return "\n".join(out)
 
 
+def render_numbered_source(en: ParsedDoc, *, source_code: str) -> str:
+    """Render source paragraphs as numbered blocks for reading (dossier input)."""
+    src = source_code.upper()
+    out: list[str] = []
+    for i, e in enumerate(en.paragraphs, start=1):
+        out.append(f"[{i}]")
+        out.append(f"{src}: {_prefix(e)}{e.text}")
+        out.append("")
+    return "\n".join(out)
+
+
+def render_translate_payload(en: ParsedDoc, *, source_code: str, target_code: str) -> str:
+    """Render source paragraphs with empty target slots to fill (translate input)."""
+    src = source_code.upper()
+    tgt = target_code.upper()
+    out: list[str] = []
+    for i, e in enumerate(en.paragraphs, start=1):
+        out.append(f"[{i}]")
+        out.append(f"{src}: {_prefix(e)}{e.text}")
+        out.append(f"{tgt}:")
+        out.append("")
+    return "\n".join(out)
+
+
 _BLOCK_RE = re.compile(r"\[(\d+)\]")
 
 

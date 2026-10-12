@@ -1,15 +1,21 @@
-"""Editor and Reviewer round passes."""
+"""Editor and Reviewer round passes, plus Simplify/Dossier/Translate pre-passes."""
 from __future__ import annotations
 
 import json
 from pathlib import Path
 from typing import Optional
 
-from server.docx_io import ParsedDoc, write_docx
+from server.docx_io import Paragraph, ParsedDoc, write_docx
 from server.errors import RecoverableError
 from server.openrouter import OpenRouterClient
 from server.paths import book_dir
-from server.payload import PayloadParseError, parse_target_lines, render_payload
+from server.payload import (
+    PayloadParseError,
+    parse_target_lines,
+    render_numbered_source,
+    render_payload,
+    render_translate_payload,
+)
 
 LANGUAGE_NAMES = {
     "en": "English",
@@ -229,3 +235,138 @@ async def run_reviewer_pass(
     cdir = _chapter_dir(slug, chapter_n)
     (cdir / f"round-{round_n}-reviewer.json").write_text(result.model_dump_json(indent=2))
     return result
+
+
+def render_translate_prompt(*, template: str, source_code: str, target_code: str) -> str:
+    return (
+        template.replace("{SOURCE_LANG_CODE}", source_code.upper())
+        .replace("{SOURCE_LANG_NAME}", _lang_name(source_code))
+        .replace("{TARGET_LANG_CODE}", target_code.upper())
+        .replace("{TARGET_LANG_NAME}", _lang_name(target_code))
+    )
+
+
+def _restore_styles(parsed: ParsedDoc, reference: ParsedDoc) -> ParsedDoc:
+    """Re-apply the reference doc's styles by index (counts already match)."""
+    return ParsedDoc(paragraphs=[
+        Paragraph(style=r.style, text=p.text)
+        for p, r in zip(parsed.paragraphs, reference.paragraphs)
+    ])
+
+
+def _reject_empty_paragraphs(parsed: ParsedDoc, *, artifact: str) -> None:
+    empties = [i for i, p in enumerate(parsed.paragraphs, start=1) if not p.text.strip()]
+    if empties:
+        raise RecoverableError(
+            f"empty paragraphs returned at index {empties} "
+            f"(raw response saved to {artifact})"
+        )
+
+
+async def run_simplification_pass(
+    *,
+    client: OpenRouterClient,
+    slug: str,
+    chapter_n: int,
+    en_doc: ParsedDoc,
+    source_code: str,
+    simplifier_prompt_template: str,
+    model: str,
+    on_retry=None,
+) -> ParsedDoc:
+    """Simplify the English source; persist draft-simplified.json."""
+    payload = render_numbered_source(en_doc, source_code=source_code)
+    system = render_translate_prompt(
+        template=simplifier_prompt_template, source_code=source_code, target_code=source_code
+    )
+    raw = await client.chat(model=model, system=system, user=payload, on_retry=on_retry)
+
+    cdir = _chapter_dir(slug, chapter_n)
+    (cdir / "draft-simplified.raw.txt").write_text(raw)
+    try:
+        simplified = parse_target_lines(
+            raw,
+            target_code=source_code,
+            expected_count=len(en_doc.paragraphs),
+        )
+    except PayloadParseError as exc:
+        raise RecoverableError(
+            f"{exc} (raw response saved to draft-simplified.raw.txt)"
+        ) from exc
+    _reject_empty_paragraphs(simplified, artifact="draft-simplified.raw.txt")
+    simplified = _restore_styles(simplified, en_doc)
+    (cdir / "draft-simplified.json").write_text(simplified.model_dump_json(indent=2))
+    return simplified
+
+
+async def run_dossier_pass(
+    *,
+    client: OpenRouterClient,
+    slug: str,
+    chapter_n: int,
+    simplified_doc: ParsedDoc,
+    source_code: str,
+    target_code: str,
+    dossier_prompt_template: str,
+    model: str,
+    on_retry=None,
+) -> str:
+    """Analyze the simplified chapter; persist draft-dossier.md (free text)."""
+    source = render_numbered_source(simplified_doc, source_code=source_code)
+    system = render_translate_prompt(
+        template=dossier_prompt_template, source_code=source_code, target_code=target_code
+    )
+    raw = await client.chat(model=model, system=system, user=source, on_retry=on_retry)
+
+    cdir = _chapter_dir(slug, chapter_n)
+    (cdir / "draft-dossier.md").write_text(raw)
+    return raw
+
+
+async def run_translation_pass(
+    *,
+    client: OpenRouterClient,
+    slug: str,
+    chapter_n: int,
+    simplified_doc: ParsedDoc,
+    dossier: str,
+    source_code: str,
+    target_code: str,
+    translator_prompt_template: str,
+    model: str,
+    on_retry=None,
+) -> ParsedDoc:
+    """Translate the simplified chapter; persist the manufactured draft."""
+    payload = render_translate_payload(
+        simplified_doc, source_code=source_code, target_code=target_code
+    )
+    user_msg = (
+        "Translation Dossier (follow it for culture, characters, terms, and dialogue):\n"
+        + dossier
+        + "\n\n"
+        + payload
+    )
+    system = render_translate_prompt(
+        template=translator_prompt_template, source_code=source_code, target_code=target_code
+    )
+    raw = await client.chat(model=model, system=system, user=user_msg, on_retry=on_retry)
+
+    cdir = _chapter_dir(slug, chapter_n)
+    (cdir / "draft-translation.raw.txt").write_text(raw)
+    try:
+        translated = parse_target_lines(
+            raw,
+            target_code=target_code,
+            expected_count=len(simplified_doc.paragraphs),
+        )
+    except PayloadParseError as exc:
+        raise RecoverableError(
+            f"{exc} (raw response saved to draft-translation.raw.txt)"
+        ) from exc
+    _reject_empty_paragraphs(translated, artifact="draft-translation.raw.txt")
+    translated = _restore_styles(translated, simplified_doc)
+    stdir = book_dir(slug) / "source-translated"
+    stdir.mkdir(parents=True, exist_ok=True)
+    (stdir / f"ch{chapter_n:02d}.json").write_text(translated.model_dump_json(indent=2))
+    write_docx(translated, stdir / f"ch{chapter_n:02d}.docx")
+    return translated

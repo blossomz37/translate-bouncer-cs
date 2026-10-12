@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   paragraphs split on blank lines; Markdown `#` headings map to
   chapter headings (prose subset only: headings, bold, italic).
   Round and finalize output stays `.docx` for now.
+- Translate-first pipeline (server): new `simplifier`, `dossier`, and
+  `translator` prompt kinds seeded from the FFA translations class,
+  plus Simplify → Dossier → Translate chapter passes that manufacture
+  the `source-translated/` draft rounds then refine.
 
 ### Changed
 - Moved the prior developer's agentic working files from `docs/superpowers/`

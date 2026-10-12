@@ -6,7 +6,9 @@ from server.docx_io import ParsedDoc, Paragraph
 from server.payload import (
     PayloadParseError,
     parse_target_lines,
+    render_numbered_source,
     render_payload,
+    render_translate_payload,
 )
 
 
@@ -37,6 +39,38 @@ def test_render_inline_markup_passthrough():
     out = render_payload(en, fr, source_code="EN", target_code="FR")
     assert "EN: The *cold* hand." in out
     assert "FR: La main *froide*." in out
+
+
+def test_render_numbered_source_has_no_target_lines():
+    en = ParsedDoc(paragraphs=[
+        Paragraph(style="heading-1", text="Chapter 1"),
+        Paragraph(style="normal", text="Hello."),
+    ])
+    assert render_numbered_source(en, source_code="en") == (
+        "[1]\n"
+        "EN: # Chapter 1\n"
+        "\n"
+        "[2]\n"
+        "EN: Hello.\n"
+    )
+
+
+def test_render_translate_payload_leaves_empty_slots():
+    en = ParsedDoc(paragraphs=[Paragraph(style="normal", text="Hello.")])
+    assert render_translate_payload(en, source_code="en", target_code="fr") == (
+        "[1]\n"
+        "EN: Hello.\n"
+        "FR:\n"
+    )
+
+
+def test_parse_filled_translate_payload_round_trips():
+    filled = "[1]\nFR: # Chapitre 1\n\n[2]\nFR: Bonjour.\n"
+    parsed = parse_target_lines(filled, target_code="fr", expected_count=2)
+    assert [(p.style, p.text) for p in parsed.paragraphs] == [
+        ("heading-1", "Chapitre 1"),
+        ("normal", "Bonjour."),
+    ]
 
 
 def test_render_paragraph_count_mismatch_raises():
