@@ -46,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Done now asks for confirmation ("Write final.docx and mark done?")
   and finished chapters offer a "Download final.docx" link, served by
   a new `GET /books/{slug}/chapter/{n}/final` endpoint.
+- Prompt history View expands the version text inline and Delete asks
+  inline ("Delete v1? …") instead of native `alert()`/`confirm()` popups.
 
 ## [0.1.0] - 2026-05-21
 
