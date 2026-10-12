@@ -49,3 +49,4 @@ release/
 workspace-agents/
 .scratch/
 .venv/
+.venv-freeze-check/
