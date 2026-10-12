@@ -70,7 +70,10 @@ chapter metadata, and `final.docx`. Full table in `README.md` §12.
 | `client/src/**/*.test.*` | vitest suite (client-side, co-located) |
 | `scripts/package.sh` | Builds the distributable `release/Translate.zip` |
 | `release-files/` | Launchers (`.command`/`.bat`/`.sh`) + `QUICK_START.txt` staged into the zip |
-| `docs/superpowers/` | Original design docs and plans (historical context) |
+| `docs/` | Official app documentation. Maintained static files only (e.g. `docs/assets/` screenshots). Never agentic working files. |
+| `workspace-agents/` | Agentic working files, kept separate from official docs. Currently holds `superpowers/` (prior dev's design docs and plans — historical context). |
+| `.archive/` | Declutter: zipped superseded/stale/inactive files (YAGNI). Opaque — never read casually or glob during normal work. |
+| `.scratch/` | Owner's junk drawer: observations, potential changes, ephemeral reference. Gitignored. Don't write here; the owner points to it when relevant. |
 | `README.md` | End-user manual + developer section (§15) |
 | `LICENSE.txt` | Restricted MIT — FFA members only; no external PRs |
 
@@ -100,8 +103,15 @@ Python dev extras include `ruff` and `mypy` (see `pyproject.toml`).
 ## Notes for agents
 
 - **Source of truth for behavior:** the code + `README.md` §15. The
-  `docs/superpowers/` plans describe the original design; treat them as
-  history, not spec, when they conflict with current code.
+  `workspace-agents/superpowers/` plans describe the original design;
+  treat them as history, not spec, when they conflict with current code.
+- **No superpowers mandate.** The prior developer required a "superpowers"
+  skill workflow; the owner does not. Straightforward implementations
+  need no special process — just do the work.
+- **Keep the lanes:** official app docs go in `docs/`; agentic working
+  files go in `workspace-agents/`; stale material gets zipped into
+  `.archive/`; `.scratch/` is the owner's private drawer (don't write
+  there, don't rely on its contents).
 - **Don't hand-edit `client/dist/`** — it's build output (regenerate via
   `npm run build`). Don't commit `release/` artifacts casually.
 - **Runtime state is outside the repo** (`~/.translate/`). Tests use
