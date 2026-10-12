@@ -569,10 +569,11 @@ Install:
 ```bash
 python3.11 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install --upgrade pip setuptools
+pip install -c requirements.lock -e ".[dev]"
 
 cd client
-npm install
+npm ci
 npm run build
 cd ..
 ```
@@ -618,8 +619,13 @@ client/                    React + Vite + TypeScript SPA
   src/lib/                 batchRunner, modelDisplay, languages, diff
   src/api/                 small fetch wrappers per resource
   src/hooks/               useBook, useChapter, useEvents, useModels, useSettings
-tests/server/              pytest suite (106+1 skipped)
-docs/                      design docs and plans
+tests/server/              pytest suite (107)
+docs/                      official docs (assets/, screenshots)
+docs/assets/               app screenshots
+requirements.lock          pinned Python constraints for the above install
+.github/workflows/ci.yml   CI: pytest+ruff+mypy, vitest+build
+AGENTS.md                  agent orientation (structure, gates, workflow)
+CHANGELOG.md               release notes (Keep a Changelog)
 ```
 
 ### API surface
@@ -656,7 +662,7 @@ proxied to the Python server.
 ### Tests
 
 ```bash
-.venv/bin/python -m pytest tests/server/ -v   # 106 passed, 1 skipped
+.venv/bin/python -m pytest tests/server/ -v   # 107 passed
 cd client && npm test                          # 95 tests
 ```
 

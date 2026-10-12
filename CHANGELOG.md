@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CHANGELOG.md` in Keep a Changelog format.
 - `.archive/` convention for zipped superseded/stale/inactive files.
 - `.scratch/` convention for the owner's ephemeral notes (gitignored).
+- `requirements.lock`: pinned Python constraints, verified with a green
+  test run in a pristine venv.
+- `.github/workflows/ci.yml`: server (pytest + ruff + mypy on Python 3.11)
+  and client (vitest + build on Node 22) on every push.
+- Ruff (pyflakes F-only) and mypy configurations in `pyproject.toml`.
+- `workspace-agents/runs/` for dated session handoff notes, and a
+  Definition of Done in `AGENTS.md`.
 
 ### Changed
 - Moved the prior developer's agentic working files from `docs/superpowers/`
@@ -23,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Events route registration test now uses `url_path_for` instead of flat
   `app.routes` introspection, which broke under Starlette 1.x (test-only;
   the app itself was unaffected).
+- Removed 20 unused imports and fixed 6 test typing errors so the new
+  ruff and mypy gates pass (no behavior change).
 
 ## [0.1.0] - 2026-05-21
 

@@ -71,18 +71,21 @@ chapter metadata, and `final.docx`. Full table in `README.md` §12.
 | `scripts/package.sh` | Builds the distributable `release/Translate.zip` |
 | `release-files/` | Launchers (`.command`/`.bat`/`.sh`) + `QUICK_START.txt` staged into the zip |
 | `docs/` | Official app documentation. Maintained static files only (e.g. `docs/assets/` screenshots). Never agentic working files. |
-| `workspace-agents/` | Agentic working files, kept separate from official docs. Currently holds `superpowers/` (prior dev's design docs and plans — historical context). |
+| `workspace-agents/` | Agentic working files, kept separate from official docs. Holds `superpowers/` (prior dev's design docs and plans — historical context) and `runs/` (dated session handoff notes). |
 | `.archive/` | Declutter: zipped superseded/stale/inactive files (YAGNI). Opaque — never read casually or glob during normal work. |
 | `.scratch/` | Owner's junk drawer: observations, potential changes, ephemeral reference. Gitignored. Don't write here; the owner points to it when relevant. |
 | `README.md` | End-user manual + developer section (§15) |
 | `LICENSE.txt` | Restricted MIT — FFA members only; no external PRs |
+| `requirements.lock` | Pinned Python constraints (see "Running it"). Refresh after dependency changes: rebuild venv, run the gates, re-freeze. |
+| `.github/workflows/ci.yml` | CI: server (pytest+ruff+mypy, Py 3.11) + client (vitest+build, Node 22) |
 
 ## Running it (from source)
 
 ```bash
 python3.11 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-cd client && npm install && npm run build && cd ..
+pip install --upgrade pip setuptools
+pip install -c requirements.lock -e ".[dev]"   # pinned; pyproject.toml holds the ranges
+cd client && npm ci && npm run build && cd ..  # Node 22
 .venv/bin/translate            # production-like: serves prebuilt client
 ```
 
@@ -90,15 +93,46 @@ Dev mode: `.venv/bin/translate --no-browser` in one terminal,
 `cd client && npm run dev` in another (Vite hot-reload on :5173,
 proxies API calls to the Python server — see `client/vite.config.ts`).
 
+In VS Code, the local-only `.vscode/tasks.json` (gitignored) provides
+**Launch App** (background server, opens the browser) and **Close App**.
+
 ## Tests and checks
 
 ```bash
-.venv/bin/python -m pytest tests/server/ -v   # server suite
-cd client && npm test                          # vitest suite
-cd client && npm run build                     # tsc + vite build (type check)
+.venv/bin/python -m pytest tests/server/ -q   # server suite (107)
+.venv/bin/ruff check server tests             # lint gate (pyflakes F-only)
+.venv/bin/mypy server tests                   # type gate
+cd client && npm test                         # vitest suite (95)
+cd client && npm run build                    # tsc + vite build (type check)
 ```
 
-Python dev extras include `ruff` and `mypy` (see `pyproject.toml`).
+These five commands are the gates. CI (`.github/workflows/ci.yml`)
+runs the same set on every push — a change is done only when all pass
+locally and CI is green.
+
+## Definition of done (every change)
+
+"Finished" means the same thing for every agent, every session:
+
+1. All five gates pass locally (see above).
+2. `CHANGELOG.md` `[Unreleased]` updated (Added/Changed/Fixed as fits).
+3. New behavior has a test in the repo's normal layout (pytest for
+   server, vitest co-located for client); behavior changes update the
+   existing tests that cover them.
+4. One focused slice per branch/commit; commit message per owner habit
+   (`Add`/`Fix`/`Update`/`Refactor` …); merge locally, delete the branch.
+5. If the change spans sessions, leave a handoff note (below).
+
+## Session handoffs
+
+No agent holds context in its head. At the end of a meaty session —
+or whenever the next session needs to know what happened — write a
+short dated note in `workspace-agents/runs/YYYY-MM-DD-topic.md`:
+what was done, key results, decisions made, what's still open.
+A few lines per section, not a report. See the 2026-10-12 baseline
+note for the shape. `runs/` is the one git-tracked corner of
+`workspace-agents/` (see `.gitignore`); everything else there stays
+local-only.
 
 ## Notes for agents
 
