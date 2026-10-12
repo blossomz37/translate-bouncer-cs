@@ -50,6 +50,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   inline ("Delete v1? …") instead of native `alert()`/`confirm()` popups.
 - Ingesting a whole-book file with no detectable chapter boundaries
   returns HTTP 400 with an explanation instead of HTTP 500.
+- README reconciled with the shipped UI: Ingest labels, diff checkbox,
+  prompt editor location, batch window, status colors, default
+  patterns, metadata filenames, plus the new Done flow.
 
 ## [0.1.0] - 2026-05-21
 

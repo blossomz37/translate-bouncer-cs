@@ -16,7 +16,7 @@ today (whole-book file or one-file-per-chapter folder). Output stays
   needs no changes).
 - Update macOS picker prompts, New Book labels, README, tests + fixtures.
 
-## Next — UI trust fixes
+## Next — UI trust fixes (shipped 2026-10-12)
 
 Small, high-impact correctness and safety fixes from the Oct 2026 review:
 
