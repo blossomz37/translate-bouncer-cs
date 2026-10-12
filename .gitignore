@@ -48,3 +48,4 @@ release/
 .archive/
 workspace-agents/
 .scratch/
+.venv/
