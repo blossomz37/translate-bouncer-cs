@@ -44,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeps a running session estimate (estimate-only v1).
 - `STATUS.md`: one-page project status snapshot with a doc map; test
   suite counts refreshed across `README.md` and `AGENTS.md`.
+- Home page shows a setup checklist (API key → default models → first
+  book) until each step is done, with links into Settings and New Book.
 
 ### Changed
 - Moved the prior developer's agentic working files from `docs/superpowers/`
