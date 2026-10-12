@@ -157,6 +157,7 @@ def ingest_book(
             )
 
     title_chapters = tr_chapters if tr_chapters is not None else en_chapters
+    tr_source: dict[str, str | None]
     if translated_path is not None:
         tr_source = {"path": str(translated_path), "format": detect_format(translated_path).value}
     else:
