@@ -44,3 +44,5 @@ client/tailwind.config.d.ts
 client/vite.config.js
 client/vite.config.d.ts
 release/
+
+.archive/
