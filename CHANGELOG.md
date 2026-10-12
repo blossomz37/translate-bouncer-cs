@@ -41,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ruff and mypy gates pass (no behavior change).
 - Chapter workspace shows an error with Retry and Back-to-book actions
   when the chapter fails to load, instead of "Loading…" forever.
+- New Book modal disables the Ingest button and shows "Ingesting…"
+  while submitting, blocking double-submit on large books.
 
 ## [0.1.0] - 2026-05-21
 

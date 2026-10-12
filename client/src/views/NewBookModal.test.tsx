@@ -63,4 +63,10 @@ describe("NewBookModal", () => {
     await userEvent.click(screen.getByRole("button", { name: /ingest/i }));
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it("disables the submit button and shows progress while submitting", () => {
+    render(<NewBookModal onSubmit={() => {}} onCancel={() => {}} submitting />);
+    const btn = screen.getByRole("button", { name: /ingesting/i });
+    expect(btn).toBeDisabled();
+  });
 });
