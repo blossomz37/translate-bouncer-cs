@@ -61,12 +61,13 @@ export default function NewBookModal({ onSubmit, onCancel, error, submitting = f
     e.preventDefault();
     const tr = cleanPath(translated);
     const en = cleanPath(english);
-    if (!tr || !en) return;
-    onSubmit({
-      translated_path: tr,
+    if (!en) return;
+    const req: IngestRequest = {
       english_path: en,
       language_pair: { from, to },
-    });
+    };
+    if (tr) req.translated_path = tr;
+    onSubmit(req);
   }
 
   return (
@@ -89,8 +90,11 @@ export default function NewBookModal({ onSubmit, onCancel, error, submitting = f
         <div className="space-y-3">
           <div>
             <label htmlFor="translated-path" className="text-sm font-medium">
-              Translated path
+              Translated path <span className="font-normal text-gray-500">(optional)</span>
             </label>
+            <p className="mt-0.5 text-xs text-gray-500">
+              Leave empty to machine-translate from English later, chapter by chapter.
+            </p>
             <div className="mt-1 flex gap-1">
               <input
                 id="translated-path"

@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 class IngestRequest(BaseModel):
-    translated_path: str
+    translated_path: str | None = None
     english_path: str
     language_pair: LanguagePair
     on_collision: Literal["resume", "new-session"] = "new-session"
@@ -39,7 +39,8 @@ def _clean_path(s: str) -> str:
 def post_book(req: IngestRequest) -> IngestResponse:
     cfg = load_config()
     from pathlib import Path
-    translated_path = Path(_clean_path(req.translated_path))
+    tr_raw = _clean_path(req.translated_path or "")
+    translated_path = Path(tr_raw) if tr_raw else None
     english_path = Path(_clean_path(req.english_path))
     try:
         result = ingest_book(

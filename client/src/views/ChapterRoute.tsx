@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { finalChapterUrl, finalizeChapter, runEditorRound, runReviewerRound } from "../api/chapters";
+import { finalChapterUrl, finalizeChapter, runEditorRound, runReviewerRound, translateChapter } from "../api/chapters";
 import type { ChapterMeta } from "../types/api";
 import { ApiError } from "../api/client";
 import BatchControls from "../components/BatchControls";
@@ -8,6 +8,8 @@ import EnglishPane from "../components/EnglishPane";
 import StatusBar, { type ActivityEntry } from "../components/StatusBar";
 import SuggestionsPane from "../components/SuggestionsPane";
 import TopBar from "../components/TopBar";
+import TranslateEntry from "../components/TranslateEntry";
+import { docChars, estimateCost, formatEstimate } from "../lib/costEstimate";
 import WorkingPane from "../components/WorkingPane";
 import { useBook } from "../hooks/useBook";
 import { useChapter } from "../hooks/useChapter";
@@ -32,6 +34,7 @@ export default function ChapterRoute() {
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [busySince, setBusySince] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [estSpend, setEstSpend] = useState(0);
 
   const appendActivity = useCallback((text: string, kind: ActivityEntry["kind"]) => {
     setActivity((prev) => {
@@ -106,6 +109,29 @@ export default function ChapterRoute() {
     return !last || last.reviewer_completed_at != null;
   }
 
+  // Estimate-only cost math (see lib/costEstimate): tokens ≈ chars/4,
+  // output assumed ≈ input. Every figure is labeled as an estimate.
+  const editorObj = models.find((m) => m.id === editorModel);
+  const reviewerObj = models.find((m) => m.id === reviewerModel);
+  const translateEstRaw = chapter.meta
+    ? estimateCost(docChars(chapter.enDoc), editorObj, 3)
+    : null;
+  const translateEst = formatEstimate(translateEstRaw);
+  const continueEstRaw = (() => {
+    if (!chapter.meta) return null;
+    const chars = docChars(chapter.enDoc) + docChars(chapter.workingDoc);
+    const editorCalls = needsLeadingEditor(chapter.meta) ? 2 : 1;
+    const parts = [
+      estimateCost(chars, editorObj, editorCalls),
+      estimateCost(chars, reviewerObj, 1),
+    ].filter((v): v is number => v !== null);
+    return parts.length ? parts.reduce((a, b) => a + b, 0) : null;
+  })();
+  const continueEst = formatEstimate(continueEstRaw);
+  const needsTranslation = !!chapter.meta
+    && chapter.meta.current_round === 0
+    && !chapter.workingDoc;
+
   const handleContinue = async () => {
     setBusy(true);
     setBusySince(Date.now());
@@ -119,6 +145,23 @@ export default function ChapterRoute() {
     } catch (err) {
       appendActivity(`⚠ ${errorMessage(err)}`, "error");
     } finally {
+      if (continueEstRaw !== null) setEstSpend((s) => s + continueEstRaw);
+      setBusy(false);
+      setBusySince(null);
+    }
+  };
+
+  const handleTranslate = async () => {
+    setBusy(true);
+    setBusySince(Date.now());
+    try {
+      await translateChapter(slug, n, editorModel);
+      await chapter.refresh();
+      appendActivity(`✓ Ch ${n} draft translated`, "complete");
+    } catch (err) {
+      appendActivity(`⚠ ${errorMessage(err)}`, "error");
+    } finally {
+      if (translateEstRaw !== null) setEstSpend((s) => s + translateEstRaw);
       setBusy(false);
       setBusySince(null);
     }
@@ -183,7 +226,16 @@ export default function ChapterRoute() {
       />
       <main className="grid grid-cols-3 overflow-hidden">
         <EnglishPane doc={chapter.enDoc} />
-        <WorkingPane doc={chapter.workingDoc} prevDoc={chapter.prevDoc} roundN={chapter.meta.current_round} />
+        {needsTranslation ? (
+          <TranslateEntry
+            disabled={!editorModel}
+            busy={busy}
+            estimate={translateEst}
+            onTranslate={handleTranslate}
+          />
+        ) : (
+          <WorkingPane doc={chapter.workingDoc} prevDoc={chapter.prevDoc} roundN={chapter.meta.current_round} />
+        )}
         <SuggestionsPane
           result={chapter.suggestions}
           bookSlug={slug}
@@ -227,6 +279,9 @@ export default function ChapterRoute() {
         busy={busy}
         elapsed={elapsed}
         canFinalize={chapter.meta.current_round > 0 && chapter.meta.status !== "done"}
+        canContinue={!needsTranslation}
+        continueEstimate={continueEst}
+        spendEstimate={estSpend > 0 ? formatEstimate(estSpend) : null}
         onContinue={handleContinue}
         onDone={handleDone}
         finalDownloadUrl={chapter.meta.status === "done" ? finalChapterUrl(slug, n) : null}

@@ -24,7 +24,7 @@ class LanguagePair(BaseModel):
 
 
 class SourceRef(BaseModel):
-    path: str
+    path: Optional[str] = None
     format: str
 
 
@@ -55,6 +55,9 @@ class Models(BaseModel):
 class PromptsUsed(BaseModel):
     editor_version: Optional[str] = None
     reviewer_version: Optional[str] = None
+    simplifier_version: Optional[str] = None
+    dossier_version: Optional[str] = None
+    translator_version: Optional[str] = None
 
 
 class RoundEntry(BaseModel):

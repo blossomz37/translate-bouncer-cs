@@ -61,6 +61,16 @@ def test_delete_current_version_raises(translate_root: Path) -> None:
         delete_version(PromptKind.EDITOR, "v2")
 
 
+def test_new_kinds_seed_from_class_prompts(translate_root: Path) -> None:
+    s = load_prompts(PromptKind.SIMPLIFIER)
+    d = load_prompts(PromptKind.DOSSIER)
+    t = load_prompts(PromptKind.TRANSLATOR)
+    assert "simplif" in s.versions[0].text.lower()
+    assert "Translation Dossier" in d.versions[0].text
+    assert "Translation Dossier" in t.versions[0].text
+    assert "{TARGET_LANG_NAME}" in t.versions[0].text
+
+
 def test_reviewer_seeded_independently(translate_root: Path) -> None:
     e = load_prompts(PromptKind.EDITOR)
     r = load_prompts(PromptKind.REVIEWER)

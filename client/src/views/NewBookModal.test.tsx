@@ -69,4 +69,15 @@ describe("NewBookModal", () => {
     const btn = screen.getByRole("button", { name: /ingesting/i });
     expect(btn).toBeDisabled();
   });
+
+  it("submits without a translated path for English-only ingest", async () => {
+    const onSubmit = vi.fn();
+    render(<NewBookModal onSubmit={onSubmit} onCancel={() => {}} />);
+    await userEvent.type(screen.getByLabelText(/english path/i), "/path/to/en");
+    await userEvent.click(screen.getByRole("button", { name: /^ingest$/i }));
+    expect(onSubmit).toHaveBeenCalledWith({
+      english_path: "/path/to/en",
+      language_pair: { from: "en", to: "fr" },
+    });
+  });
 });

@@ -27,6 +27,12 @@ const dialogResponse = {
   ],
 };
 
+const draftResponse = {
+  has_draft: true,
+  simplified: { paragraphs: [{ style: "normal", text: "Simple hello." }] },
+  dossier: "## Dossier\n\nNothing tricky.",
+};
+
 describe("SuggestionsPane", () => {
   beforeEach(() => {
     vi.stubGlobal(
@@ -35,6 +41,9 @@ describe("SuggestionsPane", () => {
         const url = typeof input === "string" ? input : input.url;
         if (url.endsWith("/dialog")) {
           return new Response(JSON.stringify(dialogResponse), { status: 200 });
+        }
+        if (url.endsWith("/draft")) {
+          return new Response(JSON.stringify(draftResponse), { status: 200 });
         }
         return new Response("not found", { status: 404 });
       }),
@@ -64,5 +73,14 @@ describe("SuggestionsPane", () => {
       expect(screen.getByText(/EDITOR ROUND 1 RAW/)).toBeInTheDocument(),
     );
     expect(screen.getByText(/REVIEWER ROUND 1 RAW/)).toBeInTheDocument();
+  });
+
+  it("switches to Draft tab and shows dossier and simplified text", async () => {
+    render(<SuggestionsPane result={sample} {...baseProps} />);
+    await userEvent.click(screen.getByRole("button", { name: /^draft$/i }));
+    await waitFor(() =>
+      expect(screen.getByText(/nothing tricky/i)).toBeInTheDocument(),
+    );
+    expect(screen.getByText("Simple hello.")).toBeInTheDocument();
   });
 });

@@ -9,15 +9,17 @@
 
 ## What this app does
 
-Translate is a **local web app for AI-assisted bilingual chapter proofreading**.
-Its users are Future Fiction Academy members translating their own books.
+Translate is a **local web app for AI-assisted book translation and
+bilingual chapter proofreading**. Its users are Future Fiction Academy
+members translating their own books.
 
-The workflow: point Translate at a translated book (e.g. a German `.docx`)
-plus the English original. It splits both into chapters, pairs them
-paragraph-for-paragraph, and walks each chapter through repeated
-**Editor → Reviewer → Editor (apply suggestions)** rounds using two AI
-models the user picks. When the user is happy, they click **Done** and
-Translate writes a final `.docx` for that chapter.
+The workflow: point Translate at the English original, with or without
+a first-pass translation. Chapters without a draft get one via a
+per-chapter **Simplify → Dossier → Translate** pipeline; then every
+chapter walks through repeated **Editor → Reviewer → Editor (apply
+suggestions)** rounds using two AI models the user picks. When the user
+is happy, they click **Done** and Translate writes a final `.docx` for
+that chapter.
 
 Everything runs locally. The only outside service is
 [OpenRouter](https://openrouter.ai), which routes prompts to the chosen
@@ -31,13 +33,18 @@ client bundle (`client/dist/`) as static files; end users never need Node.
 
 **Core pipeline** (per chapter):
 
-1. **Ingest** (`server/ingest.py`, `chapter_split.py`, `docx_io.py`) —
-   split source `.docx` files into chapters, parse to paragraph JSON.
-2. **Round** (`server/rounds.py`, `payload.py`, `prompts.py`, `openrouter.py`) —
+1. **Ingest** (`server/ingest.py`, `chapter_split.py`, `docx_io.py`,
+   `text_io.py`) — split source files (`.docx`/`.txt`/`.md`) into
+   chapters, parse to paragraph JSON. The translated side is optional.
+2. **Translate** (`server/rounds.py` pre-passes, `prompts.py` simplifier/
+   dossier/translator kinds) — per chapter with no draft: simplify the
+   English, build a Translation Dossier, draft the translation into
+   `source-translated/`. Rounds then treat it like a supplied draft.
+3. **Round** (`server/rounds.py`, `payload.py`, `prompts.py`, `openrouter.py`) —
    render a bilingual payload, send to the Editor model, send the result
    to the Reviewer model for suggestions, send suggestions back to the
    Editor to apply. Each round produces a new working version.
-3. **Finalize** (`server/finalize.py`) — write `final.docx`, mark chapter done.
+4. **Finalize** (`server/finalize.py`) — write `final.docx`, mark chapter done.
 
 **Supporting pieces:**
 

@@ -8,8 +8,8 @@ export interface LanguagePair {
 }
 
 export interface SourceRef {
-  path: string;
-  format: "folder" | "single-docx";
+  path: string | null;
+  format: "folder" | "single-docx" | "single-txt" | "single-md" | "generated";
 }
 
 export interface BookSources {
@@ -39,6 +39,9 @@ export interface ModelsRef {
 export interface PromptsUsed {
   editor_version: string | null;
   reviewer_version: string | null;
+  simplifier_version: string | null;
+  dossier_version: string | null;
+  translator_version: string | null;
 }
 
 export interface RoundEntry {
@@ -98,7 +101,7 @@ export interface Settings {
 }
 
 // /prompts shape
-export type PromptKind = "editor" | "reviewer";
+export type PromptKind = "editor" | "reviewer" | "simplifier" | "dossier" | "translator";
 export interface PromptVersion {
   id: string;
   saved_at: string;
@@ -149,4 +152,19 @@ export interface ParsedParagraph {
 }
 export interface ParsedDoc {
   paragraphs: ParsedParagraph[];
+}
+
+// Machine-translation artifacts (mirrors GET .../chapter/{n}/draft)
+export interface ChapterDraft {
+  has_draft: boolean;
+  simplified: ParsedDoc | null;
+  dossier: string | null;
+}
+
+// POST .../chapter/{n}/translate response
+export interface TranslateResponse {
+  state: ChapterMeta;
+  draft: ParsedDoc;
+  simplified: ParsedDoc;
+  dossier: string;
 }

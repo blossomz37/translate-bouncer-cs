@@ -27,6 +27,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   paragraphs split on blank lines; Markdown `#` headings map to
   chapter headings (prose subset only: headings, bold, italic).
   Round and finalize output stays `.docx` for now.
+- Translate-first pipeline (server): new `simplifier`, `dossier`, and
+  `translator` prompt kinds seeded from the FFA translations class,
+  plus Simplify → Dossier → Translate chapter passes that manufacture
+  the `source-translated/` draft rounds then refine.
+- English-only ingest: `translated_path` is now optional (`meta.json`
+  records `{path: null, format: "generated"}`). New
+  `POST /books/{slug}/chapter/{n}/translate` (runs all three passes
+  with live stage events) and `GET …/draft` (dossier, simplified
+  text, draft status) endpoints; rounds refuse chapters with no draft
+  instead of failing.
+- Translate-first UI: Translated path optional in New Book; chapters
+  without a draft show a "Translate from English" entry with a ≈ cost
+  estimate instead of an empty pane; new Draft tab shows the dossier
+  and simplified text; Continue shows a ≈ estimate and the status bar
+  keeps a running session estimate (estimate-only v1).
 
 ### Changed
 - Moved the prior developer's agentic working files from `docs/superpowers/`

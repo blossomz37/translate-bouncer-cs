@@ -191,6 +191,9 @@ export default function SettingsRoute() {
         <h2 className="text-sm font-semibold uppercase text-gray-500">Prompts</h2>
         <PromptEditor kind="editor" />
         <PromptEditor kind="reviewer" />
+        <PromptEditor kind="simplifier" />
+        <PromptEditor kind="dossier" />
+        <PromptEditor kind="translator" />
       </section>
 
       {browsing && (

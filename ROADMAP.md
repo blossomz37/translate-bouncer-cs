@@ -3,38 +3,26 @@
 Planned features and fixes for Translate, in ship order. Each slice ships
 on its own branch with tests, gates green, and a changelog entry.
 
-## Now — Slice 1: txt/md ingest (v1)
+## Shipped
 
-Accept `.txt` and `.md` books as ingest input, same two shapes as `.docx`
-today (whole-book file or one-file-per-chapter folder). Output stays
-`final.docx` for v1.
-
-- New `server/text_io.py`: `parse_txt` (blank-line paragraphs) and
-  `parse_md` (`#` headings → heading levels, `*`/`**` pass through).
-- Generalize `SourceFormat` + folder filter + chapter-split seam in
-  `server/ingest.py` / `server/chapter_split.py` (splitting logic itself
-  needs no changes).
-- Update macOS picker prompts, New Book labels, README, tests + fixtures.
-
-## Next — UI trust fixes (shipped 2026-10-12)
-
-Small, high-impact correctness and safety fixes from the Oct 2026 review:
-
-1. Render the swallowed chapter-load error (today: stuck on "Loading…").
-2. Ingest busy state: disable the button while submitting, block
-   double-submit.
-3. Confirm Done/finalize ("writes final.docx") and link the finished file.
-4. Replace native `alert()`/`confirm()` in prompt history with inline UI.
-5. Return HTTP 400 (not 500) when chapter splitting finds no boundaries.
-6. Reconcile README with the shipped UI (button labels, diff behavior,
-   prompt location, batch modal, fallback-pattern claims).
+- **Slice 1 — txt/md ingest v1** (2026-10-12): `.txt`/`.md` ingest input,
+  docx output.
+- **Slice 2 — UI trust fixes** (2026-10-12): chapter-load error UI, ingest
+  busy state, Done confirmation + final.docx download, inline prompt
+  history dialogs, ChapterSplitError → 400, README reconciliation.
+- **Slice 3 — translate-first pipeline** (2026-10-12): English-only
+  ingest; per-chapter Simplify → Dossier → Translate manufactures the
+  draft (prompts seeded from the FFA class); dossier/simplified
+  artifacts viewable in a Draft tab; estimate-only cost readout
+  (≈ per action + session total).
 
 ## Later — features
 
-- **Cost visibility:** estimate before Continue/batch ("≈ $X–Y") plus a
-  running session-spend readout, using pricing data already loaded.
+- **Cost visibility (full):** real spend from API usage, budgets.
+  (Estimate-only minimum already shipped in Slice 3.)
 - **Guided first run:** setup checklist (API key → models → first book)
-  and a one-line "Continue will run…" preview.
+  and a one-line "Continue will run…" preview — now buildable on the
+  true translate-first flow.
 - **Reading surface:** serif/prose styling for the Working pane,
   resizable or collapsible panes, stacking on narrow screens.
 - **Symmetric txt/md output:** `write_txt`/`write_md` so txt/md books
