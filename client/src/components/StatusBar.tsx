@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface ActivityEntry {
   id: number;
@@ -14,6 +14,7 @@ interface StatusBarProps {
   canFinalize: boolean;
   onContinue: () => void;
   onDone: () => void;
+  finalDownloadUrl?: string | null;
 }
 
 function formatTime(ts: number): string {
@@ -31,8 +32,10 @@ export default function StatusBar({
   canFinalize,
   onContinue,
   onDone,
+  finalDownloadUrl = null,
 }: StatusBarProps) {
   const logRef = useRef<HTMLDivElement>(null);
+  const [confirmingDone, setConfirmingDone] = useState(false);
 
   useEffect(() => {
     const el = logRef.current;
@@ -72,24 +75,53 @@ export default function StatusBar({
         <span className="truncate text-sm text-gray-700">
           {busy && elapsed > 0 ? `${lastText} (${elapsed}s)` : lastText}
         </span>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onContinue}
-            disabled={busy}
-            className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-          >
-            Continue
-          </button>
-          <button
-            type="button"
-            onClick={onDone}
-            disabled={!canFinalize || busy}
-            className="rounded bg-green-600 px-3 py-1 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-          >
-            Done
-          </button>
-        </div>
+        {confirmingDone && !busy ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700">Write final.docx and mark done?</span>
+            <button
+              type="button"
+              onClick={() => { setConfirmingDone(false); onDone(); }}
+              className="rounded bg-green-600 px-3 py-1 text-sm font-medium text-white hover:bg-green-700"
+            >
+              Confirm
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingDone(false)}
+              className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onContinue}
+              disabled={busy}
+              className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              Continue
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingDone(true)}
+              disabled={!canFinalize || busy}
+              className="rounded bg-green-600 px-3 py-1 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              Done
+            </button>
+            {finalDownloadUrl && (
+              <a
+                href={finalDownloadUrl}
+                download
+                className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50"
+              >
+                Download final.docx
+              </a>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

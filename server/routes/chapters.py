@@ -4,6 +4,7 @@ import json
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from server.config import Config, load_config
@@ -244,6 +245,23 @@ def post_finalize(slug: str, n: int) -> dict:
     except FinalizeError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return load_chapter_meta(slug, n=n).model_dump()
+
+
+@router.get("/books/{slug}/chapter/{n}/final")
+def get_chapter_final(slug: str, n: int) -> FileResponse:
+    """Download the finalized chapter .docx (404 until Done is clicked)."""
+    try:
+        load_book_meta(slug)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"book not found: {slug}")
+    p = book_dir(slug) / "chapters" / f"ch{n:02d}" / "final.docx"
+    if not p.exists():
+        raise HTTPException(status_code=404, detail=f"chapter {n} has no final.docx yet")
+    return FileResponse(
+        path=p,
+        filename=f"{slug}-ch{n:02d}-final.docx",
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
 
 
 @router.get("/books/{slug}/chapter/{n}/dialog")

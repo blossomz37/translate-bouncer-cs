@@ -88,4 +88,30 @@ describe("ChapterRoute", () => {
     await userEvent.click(screen.getByRole("button", { name: /retry/i }));
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(callsBefore));
   });
+
+  it("shows a final.docx download link when the chapter is done", async () => {
+    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
+    const orig = fetchMock.getMockImplementation() as (url: unknown) => Promise<Response>;
+    fetchMock.mockImplementation((url: unknown) => {
+      if (String(url) === "/books/x/chapter/1/state") {
+        return Promise.resolve(new Response(JSON.stringify({
+          n: 1, status: "done", current_round: 1,
+          models: { editor: "m1", reviewer: "m2" },
+          prompts_used: { editor_version: null, reviewer_version: null },
+          rounds: [{ n: 1 }],
+        }), { status: 200 }));
+      }
+      return orig(url);
+    });
+    render(
+      <MemoryRouter initialEntries={["/book/x/chapter/1"]}>
+        <Routes>
+          <Route path="/book/:slug/chapter/:n" element={<ChapterRoute />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await waitFor(() => expect(screen.getByRole("link", { name: /download final\.docx/i })).toBeInTheDocument());
+    expect(screen.getByRole("link", { name: /download final\.docx/i }))
+      .toHaveAttribute("href", "/books/x/chapter/1/final");
+  });
 });

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  finalChapterUrl,
   finalizeChapter,
   getChapterState,
   runEditorRound,
@@ -81,5 +82,9 @@ describe("chapters api", () => {
     const [url, init] = mock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("/books/x/chapter/1/finalize");
     expect(init.method).toBe("POST");
+  });
+
+  it("finalChapterUrl builds the download path", () => {
+    expect(finalChapterUrl("le-livre", 2)).toBe("/books/le-livre/chapter/2/final");
   });
 });

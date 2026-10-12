@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { finalizeChapter, runEditorRound, runReviewerRound } from "../api/chapters";
+import { finalChapterUrl, finalizeChapter, runEditorRound, runReviewerRound } from "../api/chapters";
 import type { ChapterMeta } from "../types/api";
 import { ApiError } from "../api/client";
 import BatchControls from "../components/BatchControls";
@@ -229,6 +229,7 @@ export default function ChapterRoute() {
         canFinalize={chapter.meta.current_round > 0 && chapter.meta.status !== "done"}
         onContinue={handleContinue}
         onDone={handleDone}
+        finalDownloadUrl={chapter.meta.status === "done" ? finalChapterUrl(slug, n) : null}
       />
     </div>
   );

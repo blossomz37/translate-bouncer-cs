@@ -648,6 +648,7 @@ CHANGELOG.md               release notes (Keep a Changelog)
 - `POST /books/{slug}/chapter/{n}/round/editor` — run an Editor pass
 - `POST /books/{slug}/chapter/{n}/round/reviewer` — run a Reviewer pass
 - `POST /books/{slug}/chapter/{n}/finalize` — write `final.docx`, mark done
+- `GET  /books/{slug}/chapter/{n}/final` — download `final.docx` (404 until done)
 - `GET  /books/{slug}/chapter/{n}/docs` — parsed paragraph data for the panes
 - `GET  /books/{slug}/chapter/{n}/dialog` — per-round raw model exchanges
 - `GET  /events` — Server-Sent Events stream (round progress, retries, errors)

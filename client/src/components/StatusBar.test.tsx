@@ -99,7 +99,7 @@ describe("StatusBar", () => {
     expect(onContinue).toHaveBeenCalledOnce();
   });
 
-  it("calls onDone when Done is clicked", async () => {
+  it("asks for confirmation before calling onDone", async () => {
     const onDone = vi.fn();
     render(
       <StatusBar
@@ -111,7 +111,58 @@ describe("StatusBar", () => {
         onDone={onDone}
       />,
     );
-    await userEvent.click(screen.getByRole("button", { name: /done/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^done$/i }));
+    expect(onDone).not.toHaveBeenCalled();
+    expect(screen.getByText(/write final\.docx and mark done/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /confirm/i }));
     expect(onDone).toHaveBeenCalledOnce();
+  });
+
+  it("cancel dismisses the Done confirmation without finalizing", async () => {
+    const onDone = vi.fn();
+    render(
+      <StatusBar
+        activity={empty}
+        busy={false}
+        elapsed={0}
+        canFinalize
+        onContinue={() => {}}
+        onDone={onDone}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^done$/i }));
+    await userEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    expect(onDone).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /^done$/i })).toBeInTheDocument();
+  });
+
+  it("shows a download link when finalDownloadUrl is provided", () => {
+    render(
+      <StatusBar
+        activity={empty}
+        busy={false}
+        elapsed={0}
+        canFinalize={false}
+        onContinue={() => {}}
+        onDone={() => {}}
+        finalDownloadUrl="/books/x/chapter/1/final"
+      />,
+    );
+    expect(screen.getByRole("link", { name: /download final\.docx/i }))
+      .toHaveAttribute("href", "/books/x/chapter/1/final");
+  });
+
+  it("shows no download link when finalDownloadUrl is absent", () => {
+    render(
+      <StatusBar
+        activity={empty}
+        busy={false}
+        elapsed={0}
+        canFinalize
+        onContinue={() => {}}
+        onDone={() => {}}
+      />,
+    );
+    expect(screen.queryByRole("link", { name: /download final\.docx/i })).not.toBeInTheDocument();
   });
 });

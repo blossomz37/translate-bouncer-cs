@@ -43,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when the chapter fails to load, instead of "Loading…" forever.
 - New Book modal disables the Ingest button and shows "Ingesting…"
   while submitting, blocking double-submit on large books.
+- Done now asks for confirmation ("Write final.docx and mark done?")
+  and finished chapters offer a "Download final.docx" link, served by
+  a new `GET /books/{slug}/chapter/{n}/final` endpoint.
 
 ## [0.1.0] - 2026-05-21
 
