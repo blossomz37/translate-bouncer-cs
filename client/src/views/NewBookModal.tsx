@@ -96,15 +96,15 @@ export default function NewBookModal({ onSubmit, onCancel, error }: NewBookModal
                 type="text"
                 value={translated}
                 onChange={(e) => setTranslated(e.target.value)}
-                placeholder="/path/to/translated/book.docx OR folder"
+                placeholder="/path/to/translated/book (.docx, .txt, .md) OR folder"
                 className="flex-1 rounded border border-gray-300 px-2 py-1 font-mono text-sm"
               />
               <button
                 type="button"
                 onClick={() => handlePick("translated", "file")}
                 disabled={picking !== null}
-                title="Choose .docx file"
-                aria-label="Choose translated .docx file"
+                title="Choose book file (.docx, .txt, .md)"
+                aria-label="Choose translated book file"
                 className="flex items-center gap-1 rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 {FileIcon}
@@ -114,7 +114,7 @@ export default function NewBookModal({ onSubmit, onCancel, error }: NewBookModal
                 type="button"
                 onClick={() => handlePick("translated", "folder")}
                 disabled={picking !== null}
-                title="Choose folder of .docx chapters"
+                title="Choose folder of chapter files (.docx, .txt, .md)"
                 aria-label="Choose translated folder"
                 className="flex items-center gap-1 rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
@@ -133,15 +133,15 @@ export default function NewBookModal({ onSubmit, onCancel, error }: NewBookModal
                 type="text"
                 value={english}
                 onChange={(e) => setEnglish(e.target.value)}
-                placeholder="/path/to/english/book.docx OR folder"
+                placeholder="/path/to/english/book (.docx, .txt, .md) OR folder"
                 className="flex-1 rounded border border-gray-300 px-2 py-1 font-mono text-sm"
               />
               <button
                 type="button"
                 onClick={() => handlePick("english", "file")}
                 disabled={picking !== null}
-                title="Choose .docx file"
-                aria-label="Choose English .docx file"
+                title="Choose book file (.docx, .txt, .md)"
+                aria-label="Choose English book file"
                 className="flex items-center gap-1 rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 {FileIcon}
@@ -151,7 +151,7 @@ export default function NewBookModal({ onSubmit, onCancel, error }: NewBookModal
                 type="button"
                 onClick={() => handlePick("english", "folder")}
                 disabled={picking !== null}
-                title="Choose folder of .docx chapters"
+                title="Choose folder of chapter files (.docx, .txt, .md)"
                 aria-label="Choose English folder"
                 className="flex items-center gap-1 rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >

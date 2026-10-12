@@ -68,13 +68,14 @@ def split_by_pattern(parsed: ParsedDoc, *, patterns: List[str]) -> List[SplitCha
     return chapters
 
 
-def split_docx(
-    path: Path | str,
+def split_parsed(
+    parsed: ParsedDoc,
     *,
     heading_style: str,
     fallback_patterns: List[str],
+    source: str = "<input>",
 ) -> List[SplitChapter]:
-    parsed = parse_docx(path)
+    """Split an already-parsed doc into chapters (parser-independent)."""
     by_heading = split_by_heading_style(parsed, heading_style=heading_style.lower().replace(" ", "-"))
     if len(by_heading) >= 2:
         return by_heading
@@ -83,6 +84,21 @@ def split_docx(
         if len(result) >= 2:
             return result
     raise ChapterSplitError(
-        f"Could not split {path!r}: heading style yielded {len(by_heading)} chapters, "
+        f"Could not split {source}: heading style yielded {len(by_heading)} chapters, "
         "no fallback pattern matched."
+    )
+
+
+def split_docx(
+    path: Path | str,
+    *,
+    heading_style: str,
+    fallback_patterns: List[str],
+) -> List[SplitChapter]:
+    parsed = parse_docx(path)
+    return split_parsed(
+        parsed,
+        heading_style=heading_style,
+        fallback_patterns=fallback_patterns,
+        source=f"{path!r}",
     )

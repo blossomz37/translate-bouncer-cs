@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ruff (pyflakes F-only) and mypy configurations in `pyproject.toml`.
 - `workspace-agents/runs/` for dated session handoff notes, and a
   Definition of Done in `AGENTS.md`.
+- `ROADMAP.md`: ordered plan for txt/md ingest, UI trust fixes, and
+  later features (cost visibility, guided first run, reading surface).
+- Book ingestion accepts `.txt` and `.md` sources (whole-book file or
+  one-file-per-chapter folder), alongside `.docx`. Plain-text
+  paragraphs split on blank lines; Markdown `#` headings map to
+  chapter headings (prose subset only: headings, bold, italic).
+  Round and finalize output stays `.docx` for now.
 
 ### Changed
 - Moved the prior developer's agentic working files from `docs/superpowers/`

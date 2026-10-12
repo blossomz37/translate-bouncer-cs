@@ -15,14 +15,14 @@ class UnsupportedPlatform(Exception):
 
 _FILE_SCRIPT = """tell application "System Events" to activate
 try
-\tPOSIX path of (choose file with prompt "Choose a .docx file")
+\tPOSIX path of (choose file with prompt "Choose a book file (.docx, .txt, or .md)")
 on error
 \treturn ""
 end try"""
 
 _FOLDER_SCRIPT = """tell application "System Events" to activate
 try
-\tPOSIX path of (choose folder with prompt "Choose a folder of .docx chapters")
+\tPOSIX path of (choose folder with prompt "Choose a folder of chapter files (.docx, .txt, or .md)")
 on error
 \treturn ""
 end try"""
@@ -42,7 +42,7 @@ def _run(script: str) -> str | None:
 
 
 def pick_file() -> str | None:
-    """Open a native file picker filtered to .docx. Returns POSIX path or None if cancelled."""
+    """Open a native file picker for a book file. Returns POSIX path or None if cancelled."""
     return _run(_FILE_SCRIPT)
 
 

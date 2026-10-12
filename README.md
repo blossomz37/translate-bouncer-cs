@@ -1,7 +1,8 @@
 # Translate
 
 A local web app for AI-assisted bilingual chapter proofreading. You point it at
-a translated book (e.g. a German `.docx`) and the English original, and it walks
+a translated book (e.g. a German `.docx`, `.txt`, or `.md` file) and the
+English original, and it walks
 each chapter through repeated **Editor → Reviewer → Editor (apply suggestions)**
 rounds using two AI models you choose, until the translation reads the way you
 want it to. When you're happy, click **Done** and Translate writes a final
@@ -41,7 +42,8 @@ machine except as the prompt body sent to OpenRouter for the model you selected.
 
 You have:
 
-- An English book (`.docx`, or a folder of one-`.docx`-per-chapter)
+- An English book (`.docx`, `.txt`, or `.md` — or a folder of
+  one-file-per-chapter in any of those formats)
 - A first-pass translation of that book into another language (same shape)
 
 Translate splits both books into chapters, lines them up paragraph-for-paragraph,
@@ -212,8 +214,8 @@ Clicking **Browse…** opens a popup with every OpenRouter model:
 ### Ingestion (advanced — usually leave alone)
 
 This tells Translate how to detect chapter boundaries inside a single whole-book
-`.docx`. If your manuscripts use the standard "Heading 1" Word style for chapter
-titles, you can ignore this section.
+file. If your manuscripts use the standard "Heading 1" Word style (or `#`
+Markdown headings) for chapter titles, you can ignore this section.
 
 - **Heading style** — the Word style name that marks a chapter title.
   Default: `Heading 1`.
@@ -236,10 +238,14 @@ window opens.
 
 ### Field by field
 
-- **Translated source** — the path to your translated `.docx`, OR a folder
-  containing one `.docx` per chapter. Click the **📁 File** button to open
-  a native macOS file picker, or **📁 Folder** to pick a folder of chapter
-  files. (You can also paste a path; Translate strips wrapping quotes.)
+- **Translated source** — the path to your translated book (`.docx`, `.txt`,
+  or `.md`), OR a folder containing one file per chapter. Click the
+  **📁 File** button to open a native macOS file picker, or **📁 Folder**
+  to pick a folder of chapter files. (You can also paste a path; Translate
+  strips wrapping quotes.) For `.txt`, paragraphs are separated by blank
+  lines. For `.md`, `#` headings mark chapters; only the prose subset
+  (headings, bold, italic) is kept. Either way, the finished chapter is
+  still written as `final.docx`.
 - **English source** — same idea, for the English original.
 - **Source language** — what the English file is in. Defaults to **English (en)**.
 - **Target language** — what the translated file is in (German, French,
@@ -602,8 +608,9 @@ server/                    Python FastAPI server
   main.py                  app factory, lock-file, CLI entry point
   config.py                Pydantic config model + load/save
   ingest.py                book ingestion (chapter splitting, pairing)
-  chapter_split.py         Word .docx chapter detection
+  chapter_split.py         chapter detection (heading style + patterns)
   docx_io.py               .docx ↔ ParsedDoc conversion
+  text_io.py               .txt/.md ↔ ParsedDoc conversion
   payload.py               bilingual payload renderer + tolerant parser
   prompts.py               editor/reviewer prompts + version history
   rounds.py                editor/reviewer pass orchestration
