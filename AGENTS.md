@@ -83,6 +83,7 @@ chapter metadata, and `final.docx`. Full table in `README.md` §12.
 | `.scratch/` | Owner's junk drawer: observations, potential changes, ephemeral reference. Gitignored. Don't write here; the owner points to it when relevant. |
 | `README.md` | End-user manual + developer section (§15) |
 | `ROADMAP.md` | Ordered plan: upcoming features and fixes |
+| `STATUS.md` | One-page project status snapshot + doc map |
 | `LICENSE.txt` | Restricted MIT — FFA members only; no external PRs |
 | `requirements.lock` | Pinned Python constraints (see "Running it"). Refresh after dependency changes: rebuild venv, run the gates, re-freeze. |
 | `.github/workflows/ci.yml` | CI: server (pytest+ruff+mypy, Py 3.11) + client (vitest+build, Node 22) |
@@ -107,10 +108,10 @@ In VS Code, the local-only `.vscode/tasks.json` (gitignored) provides
 ## Tests and checks
 
 ```bash
-.venv/bin/python -m pytest tests/server/ -q   # server suite (107)
+.venv/bin/python -m pytest tests/server/ -q   # server suite (143)
 .venv/bin/ruff check server tests             # lint gate (pyflakes F-only)
 .venv/bin/mypy server tests                   # type gate
-cd client && npm test                         # vitest suite (95)
+cd client && npm test                         # vitest suite (118)
 cd client && npm run build                    # tsc + vite build (type check)
 ```
 

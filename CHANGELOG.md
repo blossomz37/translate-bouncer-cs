@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   estimate instead of an empty pane; new Draft tab shows the dossier
   and simplified text; Continue shows a ≈ estimate and the status bar
   keeps a running session estimate (estimate-only v1).
+- `STATUS.md`: one-page project status snapshot with a doc map; test
+  suite counts refreshed across `README.md` and `AGENTS.md`.
 
 ### Changed
 - Moved the prior developer's agentic working files from `docs/superpowers/`
