@@ -7,6 +7,7 @@ interface NewBookModalProps {
   onSubmit: (req: IngestRequest) => void;
   onCancel: () => void;
   error?: string | null;
+  submitting?: boolean;
 }
 
 const FileIcon = (
@@ -21,7 +22,7 @@ const FolderIcon = (
   </svg>
 );
 
-export default function NewBookModal({ onSubmit, onCancel, error }: NewBookModalProps) {
+export default function NewBookModal({ onSubmit, onCancel, error, submitting = false }: NewBookModalProps) {
   const [translated, setTranslated] = useState("");
   const [english, setEnglish] = useState("");
   const [from, setFrom] = useState(DEFAULT_SOURCE);
@@ -197,9 +198,10 @@ export default function NewBookModal({ onSubmit, onCancel, error }: NewBookModal
           </button>
           <button
             type="submit"
-            className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
+            disabled={submitting}
+            className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            Ingest
+            {submitting ? "Ingesting…" : "Ingest"}
           </button>
         </div>
       </form>

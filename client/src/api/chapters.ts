@@ -19,5 +19,8 @@ export const runReviewerRound = (slug: string, n: number, model: string) =>
 export const finalizeChapter = (slug: string, n: number) =>
   request<ChapterMeta>(`/books/${slug}/chapter/${n}/finalize`, { method: "POST" });
 
+export const finalChapterUrl = (slug: string, n: number) =>
+  `/books/${slug}/chapter/${n}/final`;
+
 export const getChapterDialog = (slug: string, n: number) =>
   request<ChapterDialog>(`/books/${slug}/chapter/${n}/dialog`);

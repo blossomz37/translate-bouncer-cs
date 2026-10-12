@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ChapterRoute from "./ChapterRoute";
@@ -61,5 +62,56 @@ describe("ChapterRoute", () => {
     await waitFor(() => expect(screen.getByText("Hello.")).toBeInTheDocument());
     expect(screen.getByText("Bonjour.")).toBeInTheDocument();
     expect(screen.getByText(/click continue/i)).toBeInTheDocument();
+  });
+
+  it("shows an error with retry and back link when loading fails", async () => {
+    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
+    const orig = fetchMock.getMockImplementation() as (url: unknown) => Promise<Response>;
+    fetchMock.mockImplementation((url: unknown) => {
+      if (String(url) === "/books/x/chapter/1/docs") {
+        return Promise.resolve(new Response("boom", { status: 500 }));
+      }
+      return orig(url);
+    });
+    render(
+      <MemoryRouter initialEntries={["/book/x/chapter/1"]}>
+        <Routes>
+          <Route path="/book/:slug/chapter/:n" element={<ChapterRoute />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await waitFor(() => expect(screen.getByText(/couldn't load this chapter/i)).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /back to book/i })).toHaveAttribute("href", "/book/x");
+
+    const callsBefore = fetchMock.mock.calls.length;
+    await userEvent.click(screen.getByRole("button", { name: /retry/i }));
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(callsBefore));
+  });
+
+  it("shows a final.docx download link when the chapter is done", async () => {
+    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
+    const orig = fetchMock.getMockImplementation() as (url: unknown) => Promise<Response>;
+    fetchMock.mockImplementation((url: unknown) => {
+      if (String(url) === "/books/x/chapter/1/state") {
+        return Promise.resolve(new Response(JSON.stringify({
+          n: 1, status: "done", current_round: 1,
+          models: { editor: "m1", reviewer: "m2" },
+          prompts_used: { editor_version: null, reviewer_version: null },
+          rounds: [{ n: 1 }],
+        }), { status: 200 }));
+      }
+      return orig(url);
+    });
+    render(
+      <MemoryRouter initialEntries={["/book/x/chapter/1"]}>
+        <Routes>
+          <Route path="/book/:slug/chapter/:n" element={<ChapterRoute />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    await waitFor(() => expect(screen.getByRole("link", { name: /download final\.docx/i })).toBeInTheDocument());
+    expect(screen.getByRole("link", { name: /download final\.docx/i }))
+      .toHaveAttribute("href", "/books/x/chapter/1/final");
   });
 });

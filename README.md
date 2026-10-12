@@ -219,15 +219,16 @@ Markdown headings) for chapter titles, you can ignore this section.
 
 - **Heading style** — the Word style name that marks a chapter title.
   Default: `Heading 1`.
-- **Fallback patterns** — regular expressions, one per line, that also
-  count as chapter boundaries when the heading style alone misses them.
-  Default patterns recognize "Chapter 1", "Chapter One", "Prologue",
-  "Epilogue", and `# Title` markdown.
+- **Fallback patterns** — regular expressions, one per line. When the
+  heading style finds fewer than two chapters, each pattern is tried in
+  turn against paragraph text, and the first one matching two or more
+  boundaries wins. Defaults recognize "Chapter 1", "Chapitre 1",
+  "Capítulo 1", and "Chapter IV" style titles.
 
 ### Editor / Reviewer prompts
 
-At the bottom: links to **Edit editor prompt** and **Edit reviewer prompt**.
-See [section 11](#11-editing-the-prompts) for how those work.
+At the bottom: the editor and reviewer prompt editors, as collapsible
+sections. See [section 11](#11-editing-the-prompts) for how those work.
 
 ---
 
@@ -238,15 +239,15 @@ window opens.
 
 ### Field by field
 
-- **Translated source** — the path to your translated book (`.docx`, `.txt`,
+- **Translated path** — the path to your translated book (`.docx`, `.txt`,
   or `.md`), OR a folder containing one file per chapter. Click the
-  **📁 File** button to open a native macOS file picker, or **📁 Folder**
+  **File** button to open a native macOS file picker, or **Folder**
   to pick a folder of chapter files. (You can also paste a path; Translate
   strips wrapping quotes.) For `.txt`, paragraphs are separated by blank
   lines. For `.md`, `#` headings mark chapters; only the prose subset
   (headings, bold, italic) is kept. Either way, the finished chapter is
   still written as `final.docx`.
-- **English source** — same idea, for the English original.
+- **English path** — same idea, for the English original.
 - **Source language** — what the English file is in. Defaults to **English (en)**.
 - **Target language** — what the translated file is in (German, French,
   Spanish, Brazilian Portuguese, etc.). This is used to label paragraphs
@@ -255,9 +256,10 @@ window opens.
 ### Buttons
 
 - **Cancel** — close the window without ingesting.
-- **Create book** — Translate splits both files into chapters, pairs them
+- **Ingest** — Translate splits both files into chapters, pairs them
   up by chapter index (chapter 1 of English with chapter 1 of translation,
-  etc.), and writes everything into `~/.translate/<your-book-slug>/`. If
+  etc.), and writes everything into `~/.translate/<your-book-slug>/`. The
+  button shows "Ingesting…" and locks while it works. If
   the chapter counts don't match, you'll get an error listing the chapter
   titles found in each file so you can fix the source documents.
 
@@ -271,7 +273,7 @@ book appears in the Books list.
 This is what you see when Translate opens.
 
 - **+ New book** button — top-right. Opens the New book window above.
-- **⚙ Settings** button — top-right. Opens Settings.
+- **Settings** link — top-right. Opens Settings.
 - **One row per book** — each row shows the book's slug; click anywhere on
   the row to open that book. If no books exist, you see "No books yet."
 
@@ -284,10 +286,14 @@ That's the whole page.
 Clicking a book row opens its overview.
 
 - **← Books** link — top-left, returns to the home page.
-- **Book slug** — large title.
-- **Chapter list** — every chapter as a row showing `Ch 01 — Title — status`.
+- **Batch run…** button — top-right, opens the batch window (see
+  section 10). **Settings** link next to it.
+- **Book slug** — large title, with the language pair, chapter count,
+  and the original English/translated source paths underneath.
+- **Chapter list** — every chapter as a row showing `Ch 01 — Title`
+  plus its status, right-aligned.
   - Status `untouched` (grey) = no rounds run yet.
-  - Status `in_progress` (blue) = at least one round done, not finalized.
+  - Status `in progress` (amber) = at least one round done, not finalized.
   - Status `done` (green) = finalized. The `final.docx` exists.
 - Click any chapter row to open the Chapter workspace.
 
@@ -330,8 +336,10 @@ top-to-bottom:
 
 **Middle — Working.** The current target-language version. After Round 1
 this is the editor's first translation; after Round 2 it incorporates the
-Round-1 reviewer's suggestions; and so on. **Inline strike-through and
-underline diffs** show what changed since the previous round.
+Round-1 reviewer's suggestions; and so on. Tick **Show diff vs round N**
+in the pane header to swap the pane to a paragraph-by-paragraph
+comparison against the previous round: added paragraphs get a green
+background, removed ones a red background with strike-through.
 
 **Right — Suggestions / Dialog.** Has two tabs at the top-right:
 
@@ -372,8 +380,10 @@ A scrolling log shows every action with timestamps:
   elapsed seconds when a model is running, plus two buttons:
   - **Continue** — run one round of *Editor → Reviewer → Editor (apply)*.
     Disabled while busy. See [section 9](#9-what-a-round-actually-does).
-  - **Done** — finalize the chapter. Writes `final.docx` and marks the
-    chapter `done`. Disabled until at least one round has run.
+  - **Done** — finalize the chapter. Asks for confirmation, then writes
+    `final.docx` and marks the chapter `done`. Disabled until at least
+    one round has run. Once done, a **Download final.docx** link appears
+    next to the buttons.
 
 ---
 
@@ -401,15 +411,16 @@ call and one Editor call — no wasted work.
 
 The **working pane** always shows the latest editor output. The
 **previous round** is whatever editor output came right before it, which
-is what the inline diff is computed against.
+is what the "Show diff" comparison is computed against.
 
 You can run as many rounds as you want; each one is saved to disk
 separately, so nothing is lost.
 
-When you're happy, click **Done**. Translate copies the latest editor
-output to `final.docx` in the chapter's folder and flips the chapter
-status to `done`. The Done button is disabled until you've run at least
-one round.
+When you're happy, click **Done** and confirm. Translate copies the
+latest editor output to `final.docx` in the chapter's folder and flips
+the chapter status to `done`. The Done button is disabled until you've
+run at least one round; afterwards, **Download final.docx** grabs the
+file straight from the workspace.
 
 ---
 
@@ -453,22 +464,34 @@ You can keep clicking around the workspace while a batch runs — switch
 chapters, toggle to the Dialog tab, etc. Just don't close the browser tab
 or the Terminal window.
 
+### The Batch run window (Book page)
+
+The Book page has a **Batch run…** button that opens the same controls
+as a window: From/To chapter numbers, **Skip done chapters**, Editor and
+Reviewer model pickers, **Rounds per chapter**, and **Finalize each
+chapter when done**, with a "Will process N chapters × M rounds each"
+read-out. While running it shows completed/error counts and a live log;
+the header button becomes **Stop after current chapter**.
+
 ---
 
 ## 11. Editing the prompts
 
 Translate ships with default Editor and Reviewer prompts that work for most
-fiction. If you want to customize them, go to **⚙ Settings → Edit editor
-prompt** (or **Edit reviewer prompt**).
+fiction. To customize them, open **Settings** and scroll to the prompt
+editors at the bottom (one collapsible section per prompt).
 
-The prompt page has:
+Each prompt editor has:
 
 - A large text area showing the **current** prompt.
 - **Save as new version** — writes your changes as a new version, sets it
   current. Old versions stay on disk.
-- **Version history** — a list of every saved version with timestamps.
+- **Show history (N)** — expands a list of every saved version with
+  timestamps.
+  - **View** — expands the version's text inline below its row.
   - **Restore** — make a past version current again.
-  - **Delete** — permanently remove a non-current version.
+  - **Delete** — asks inline, then permanently removes a non-current
+    version. Restore and Delete are disabled for the current version.
 
 Templates use a couple of substitution tokens that Translate fills in at
 runtime — `{TARGET_LANG_CODE}`, `{TARGET_LANG_NAME}`, `{SOURCE_LANG_NAME}`.
@@ -486,14 +509,14 @@ Everything Translate stores is under `~/.translate/`:
 | `~/.translate/prompts/editor.json` | Editor prompt and full version history. |
 | `~/.translate/prompts/reviewer.json` | Reviewer prompt and full version history. |
 | `~/.translate/.lock` | Single-instance lock (PID + URL). Deleted when Translate quits cleanly. |
-| `~/.translate/<book-slug>/book.json` | This book's metadata (sources, language pair, chapter list). |
+| `~/.translate/<book-slug>/meta.json` | This book's metadata (sources, language pair, chapter list). |
 | `~/.translate/<book-slug>/source-en/chNN.json` | Parsed English chapter (paragraphs + styles). |
 | `~/.translate/<book-slug>/source-translated/chNN.json` | Parsed first-pass translation. |
 | `~/.translate/<book-slug>/chapters/chNN/round-K-editor.docx` | The editor's output for round K, as Word. |
 | `~/.translate/<book-slug>/chapters/chNN/round-K-editor.json` | Same, as parsed JSON. |
 | `~/.translate/<book-slug>/chapters/chNN/round-K-editor.raw.txt` | The literal text the editor returned. Useful for debugging parse failures. |
 | `~/.translate/<book-slug>/chapters/chNN/round-K-reviewer.json` | The reviewer's parsed suggestions for round K, plus raw response. |
-| `~/.translate/<book-slug>/chapters/chNN/chNN.json` | Chapter metadata (status, current round, models used per round, prompts used per round). |
+| `~/.translate/<book-slug>/chapters/chNN/meta.json` | Chapter metadata (status, current round, models used per round, prompts used per round). |
 | `~/.translate/<book-slug>/chapters/chNN/final.docx` | Written when you click Done. The shippable result. |
 
 **You can copy or delete a book by copying or removing its folder.**
@@ -648,6 +671,7 @@ CHANGELOG.md               release notes (Keep a Changelog)
 - `POST /books/{slug}/chapter/{n}/round/editor` — run an Editor pass
 - `POST /books/{slug}/chapter/{n}/round/reviewer` — run a Reviewer pass
 - `POST /books/{slug}/chapter/{n}/finalize` — write `final.docx`, mark done
+- `GET  /books/{slug}/chapter/{n}/final` — download `final.docx` (404 until done)
 - `GET  /books/{slug}/chapter/{n}/docs` — parsed paragraph data for the panes
 - `GET  /books/{slug}/chapter/{n}/dialog` — per-round raw model exchanges
 - `GET  /events` — Server-Sent Events stream (round progress, retries, errors)

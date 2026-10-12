@@ -39,6 +39,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the app itself was unaffected).
 - Removed 20 unused imports and fixed 6 test typing errors so the new
   ruff and mypy gates pass (no behavior change).
+- Chapter workspace shows an error with Retry and Back-to-book actions
+  when the chapter fails to load, instead of "Loading…" forever.
+- New Book modal disables the Ingest button and shows "Ingesting…"
+  while submitting, blocking double-submit on large books.
+- Done now asks for confirmation ("Write final.docx and mark done?")
+  and finished chapters offer a "Download final.docx" link, served by
+  a new `GET /books/{slug}/chapter/{n}/final` endpoint.
+- Prompt history View expands the version text inline and Delete asks
+  inline ("Delete v1? …") instead of native `alert()`/`confirm()` popups.
+- Ingesting a whole-book file with no detectable chapter boundaries
+  returns HTTP 400 with an explanation instead of HTTP 500.
+- README reconciled with the shipped UI: Ingest labels, diff checkbox,
+  prompt editor location, batch window, status colors, default
+  patterns, metadata filenames, plus the new Done flow.
 
 ## [0.1.0] - 2026-05-21
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { finalizeChapter, runEditorRound, runReviewerRound } from "../api/chapters";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { finalChapterUrl, finalizeChapter, runEditorRound, runReviewerRound } from "../api/chapters";
 import type { ChapterMeta } from "../types/api";
 import { ApiError } from "../api/client";
 import BatchControls from "../components/BatchControls";
@@ -20,7 +20,8 @@ export default function ChapterRoute() {
   const n = parseInt(nStr, 10);
   const navigate = useNavigate();
 
-  const { meta: book } = useBook(slug);
+  const bookState = useBook(slug);
+  const book = bookState.meta;
   const chapter = useChapter(slug, n);
   const { models } = useModels();
   const { settings } = useSettings();
@@ -139,6 +140,31 @@ export default function ChapterRoute() {
   };
 
   if (!book || !chapter.meta) {
+    const loadError = bookState.error ?? chapter.error;
+    if (loadError && !bookState.loading && !chapter.loading) {
+      return (
+        <div data-testid="chapter-route" className="mx-auto max-w-lg p-6">
+          <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+            Couldn't load this chapter: {loadError.message}
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => { bookState.refresh(); chapter.refresh(); }}
+              className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Retry
+            </button>
+            <Link
+              to={`/book/${slug}`}
+              className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50"
+            >
+              Back to book
+            </Link>
+          </div>
+        </div>
+      );
+    }
     return <div data-testid="chapter-route" className="p-6 text-gray-500">Loading…</div>;
   }
 
@@ -203,6 +229,7 @@ export default function ChapterRoute() {
         canFinalize={chapter.meta.current_round > 0 && chapter.meta.status !== "done"}
         onContinue={handleContinue}
         onDone={handleDone}
+        finalDownloadUrl={chapter.meta.status === "done" ? finalChapterUrl(slug, n) : null}
       />
     </div>
   );

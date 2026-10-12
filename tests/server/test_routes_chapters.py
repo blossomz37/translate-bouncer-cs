@@ -90,6 +90,28 @@ def test_post_finalize_marks_done(app_with_book, monkeypatch) -> None:
     assert state["status"] == "done"
 
 
+def test_get_final_returns_404_before_finalize(app_with_book) -> None:
+    client, slug = app_with_book
+    r = client.get(f"/books/{slug}/chapter/1/final")
+    assert r.status_code == 404
+
+
+def test_get_final_downloads_docx_after_finalize(app_with_book, monkeypatch) -> None:
+    client, slug = app_with_book
+    fake_client = AsyncMock()
+    fake_client.chat = AsyncMock(return_value=_EDITOR_MOCK_RESPONSE)
+    monkeypatch.setattr(chapters_routes, "_make_client", lambda cfg: fake_client)
+    client.post(f"/books/{slug}/chapter/1/round/editor", json={"model": "ed"})
+    client.post(f"/books/{slug}/chapter/1/finalize")
+    r = client.get(f"/books/{slug}/chapter/1/final")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    assert "final.docx" in r.headers["content-disposition"]
+    assert len(r.content) > 0
+
+
 def test_post_round_editor_returns_502_on_transient_error(app_with_book, monkeypatch) -> None:
     client, slug = app_with_book
     fake_client = AsyncMock()

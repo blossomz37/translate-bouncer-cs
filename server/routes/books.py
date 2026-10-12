@@ -3,6 +3,7 @@ from typing import List, Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from server.chapter_split import ChapterSplitError
 from server.config import load_config
 from server.ingest import ChapterCountMismatch, ingest_book
 from server.state import LanguagePair, list_books, load_book_meta
@@ -58,6 +59,8 @@ def post_book(req: IngestRequest) -> IngestResponse:
         })
     except FileNotFoundError as exc:
         raise HTTPException(status_code=400, detail=f"path not found: {exc}")
+    except ChapterSplitError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return IngestResponse(slug=result.slug)

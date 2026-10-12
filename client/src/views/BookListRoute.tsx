@@ -8,6 +8,7 @@ export default function BookListRoute() {
   const { slugs, refresh, loading, error } = useBooks();
   const [showModal, setShowModal] = useState(false);
   const [ingestError, setIngestError] = useState<string | null>(null);
+  const [ingesting, setIngesting] = useState(false);
   const navigate = useNavigate();
 
   return (
@@ -55,6 +56,8 @@ export default function BookListRoute() {
         <NewBookModal
           onCancel={() => { setShowModal(false); setIngestError(null); }}
           onSubmit={async (req) => {
+            if (ingesting) return;
+            setIngesting(true);
             setIngestError(null);
             try {
               const out = await ingestBook(req);
@@ -63,9 +66,12 @@ export default function BookListRoute() {
               navigate(`/book/${out.slug}`);
             } catch (e) {
               setIngestError(e instanceof Error ? e.message : String(e));
+            } finally {
+              setIngesting(false);
             }
           }}
           error={ingestError}
+          submitting={ingesting}
         />
       )}
     </div>

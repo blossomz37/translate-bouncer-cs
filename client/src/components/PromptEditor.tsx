@@ -11,6 +11,8 @@ export default function PromptEditor({ kind }: Props) {
   const [draft, setDraft] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   if (loading) return <p className="text-sm text-gray-500">Loading {kind} prompt…</p>;
   if (error) return <p className="text-sm text-red-600">{error.message}</p>;
@@ -53,46 +55,73 @@ export default function PromptEditor({ kind }: Props) {
       {showHistory && (
         <ul className="mt-3 space-y-1">
           {data.versions.map((v) => (
-            <li key={v.id} className="flex items-center justify-between rounded border border-gray-200 px-2 py-1 text-xs">
-              <span>
-                <span className="font-mono">{v.id}</span>
-                {v.id === data.current && <span className="ml-2 text-green-600">(current)</span>}
-                <span className="ml-2 text-gray-400">{v.saved_at}</span>
-              </span>
-              <span className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => alert(v.text)}
-                  className="rounded border border-gray-300 px-2 py-0.5 hover:bg-gray-50"
-                >
-                  View
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setActionError(null);
-                    try { await restore(v.id); }
-                    catch (e) { setActionError(e instanceof Error ? e.message : String(e)); }
-                  }}
-                  disabled={v.id === data.current}
-                  className="rounded border border-gray-300 px-2 py-0.5 hover:bg-gray-50 disabled:opacity-40"
-                >
-                  Restore
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!confirm(`Delete ${v.id}?`)) return;
-                    setActionError(null);
-                    try { await remove(v.id); }
-                    catch (e) { setActionError(e instanceof Error ? e.message : String(e)); }
-                  }}
-                  disabled={v.id === data.current}
-                  className="rounded border border-red-300 px-2 py-0.5 text-red-700 hover:bg-red-50 disabled:opacity-40"
-                >
-                  Delete
-                </button>
-              </span>
+            <li key={v.id} className="rounded border border-gray-200 px-2 py-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span>
+                  <span className="font-mono">{v.id}</span>
+                  {v.id === data.current && <span className="ml-2 text-green-600">(current)</span>}
+                  <span className="ml-2 text-gray-400">{v.saved_at}</span>
+                </span>
+                <span className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setViewingId((cur) => (cur === v.id ? null : v.id))}
+                    className="rounded border border-gray-300 px-2 py-0.5 hover:bg-gray-50"
+                  >
+                    {viewingId === v.id ? "Close" : "View"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setActionError(null);
+                      try { await restore(v.id); }
+                      catch (e) { setActionError(e instanceof Error ? e.message : String(e)); }
+                    }}
+                    disabled={v.id === data.current}
+                    className="rounded border border-gray-300 px-2 py-0.5 hover:bg-gray-50 disabled:opacity-40"
+                  >
+                    Restore
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDeleteId(v.id)}
+                    disabled={v.id === data.current}
+                    className="rounded border border-red-300 px-2 py-0.5 text-red-700 hover:bg-red-50 disabled:opacity-40"
+                  >
+                    Delete
+                  </button>
+                </span>
+              </div>
+              {viewingId === v.id && (
+                <pre className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap rounded bg-gray-50 p-2 font-mono text-xs">{v.text}</pre>
+              )}
+              {confirmDeleteId === v.id && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span>Delete {v.id}? This can't be undone.</span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setConfirmDeleteId(null);
+                      setActionError(null);
+                      try {
+                        await remove(v.id);
+                        setViewingId((cur) => (cur === v.id ? null : cur));
+                      }
+                      catch (e) { setActionError(e instanceof Error ? e.message : String(e)); }
+                    }}
+                    className="rounded bg-red-600 px-2 py-0.5 font-medium text-white hover:bg-red-700"
+                  >
+                    Confirm delete
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDeleteId(null)}
+                    className="rounded border border-gray-300 px-2 py-0.5 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </li>
           ))}
         </ul>
